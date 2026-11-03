@@ -1,0 +1,1877 @@
+:root {
+  color-scheme: light;
+  /* Core Alpine Editorial Limestone Palette */
+  --bg: #f4f1ea;
+  --bg-subtle: #ebe6dc;
+  --surface: #ffffff;
+  --surface-raised: #faf8f4;
+  --surface-sunken: #efebe2;
+  --ink: #11161b;
+  --ink-2: #2d353e;
+  --muted: #5c646d;
+  --faint: #878f99;
+  --line: #dcd7cc;
+  --line-strong: #c2bbb0;
+
+  /* Austrian Signal Vermilion + Alpine Spruce + Danube Slate */
+  --primary: #c8232c;
+  --primary-hover: #a61921;
+  --primary-soft: rgba(200, 35, 44, 0.09);
+  --primary-border: rgba(200, 35, 44, 0.32);
+  --on-primary: #ffffff;
+
+  --alpine: #146348;
+  --alpine-soft: rgba(20, 99, 72, 0.11);
+  --alpine-border: rgba(20, 99, 72, 0.32);
+
+  --danube: #1e4368;
+  --danube-soft: rgba(30, 67, 104, 0.1);
+  --danube-border: rgba(30, 67, 104, 0.28);
+
+  --amber: #b45309;
+  --amber-soft: rgba(180, 83, 9, 0.11);
+
+  /* Unified aliases for --at-* tokens */
+  --at-bg-canvas: var(--bg);
+  --at-bg-elevated: var(--surface);
+  --at-bg-inset: var(--surface-sunken);
+  --at-bg-raised: var(--surface-raised);
+  --at-ink: var(--ink);
+  --at-ink-secondary: var(--ink-2);
+  --at-ink-muted: var(--muted);
+  --at-border: var(--line);
+  --at-border-strong: var(--line-strong);
+  --at-vermilion: var(--primary);
+  --at-vermilion-soft: var(--primary-soft);
+  --at-spruce: var(--alpine);
+  --at-spruce-soft: var(--alpine-soft);
+  --at-danube: var(--danube);
+  --at-danube-soft: var(--danube-soft);
+  --at-amber: var(--amber);
+  --at-amber-soft: var(--amber-soft);
+
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-serif: 'Instrument Serif', Georgia, serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-pill: 999px;
+
+  --shadow-card: 0 2px 10px rgba(17, 22, 27, 0.045), 0 1px 2px rgba(17, 22, 27, 0.03);
+  --shadow-elevated: 0 18px 42px rgba(17, 22, 27, 0.11), 0 4px 12px rgba(17, 22, 27, 0.05);
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #0b1016;
+  --bg-subtle: #111821;
+  --surface: #151e29;
+  --surface-raised: #1b2634;
+  --surface-sunken: #0e151d;
+  --ink: #f1f5f9;
+  --ink-2: #cbd5e1;
+  --muted: #94a3b8;
+  --faint: #64748b;
+  --line: #243242;
+  --line-strong: #36485e;
+
+  --primary: #ef4444;
+  --primary-hover: #f87171;
+  --primary-soft: rgba(239, 68, 68, 0.15);
+  --primary-border: rgba(239, 68, 68, 0.42);
+  --on-primary: #ffffff;
+
+  --alpine: #34d399;
+  --alpine-soft: rgba(52, 211, 153, 0.14);
+  --alpine-border: rgba(52, 211, 153, 0.36);
+
+  --danube: #60a5fa;
+  --danube-soft: rgba(96, 165, 250, 0.14);
+  --danube-border: rgba(96, 165, 250, 0.34);
+
+  --amber: #fbbf24;
+  --amber-soft: rgba(251, 191, 36, 0.14);
+
+  --shadow-card: 0 6px 18px rgba(0, 0, 0, 0.32);
+  --shadow-elevated: 0 24px 52px rgba(0, 0, 0, 0.55);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Subtle Austrian architectural dot-grid backdrop */
+body {
+  background-image: radial-gradient(var(--line-strong) 0.75px, transparent 0.75px);
+  background-size: 24px 24px;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Top Austrian Red-White-Red Micro Ribbon */
+.at-ribbon {
+  height: 4px;
+  background: linear-gradient(
+    90deg,
+    var(--primary) 0%,
+    var(--primary) 36%,
+    #ffffff 36%,
+    #ffffff 64%,
+    var(--primary) 64%,
+    var(--primary) 100%
+  );
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main-container,
+.container {
+  width: 100%;
+  max-width: 1340px;
+  margin: 0 auto;
+  padding: 0 24px 72px;
+}
+
+@media (max-width: 640px) {
+  .main-container,
+  .container {
+    padding: 0 14px 64px;
+  }
+}
+
+/* ==========================================================================
+   HEADER & NAVIGATION
+   ========================================================================== */
+.site-header,
+.top-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--line);
+}
+
+.header-inner {
+  max-width: 1340px;
+  margin: 0 auto;
+  padding: 10px 24px;
+  min-height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  text-decoration: none;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.brand-flag-mark,
+.brand-crest {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(
+    180deg,
+    #c8232c 0%,
+    #c8232c 33%,
+    #ffffff 33%,
+    #ffffff 67%,
+    #c8232c 67%,
+    #c8232c 100%
+  );
+  color: #11161b;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  box-shadow: 0 3px 10px rgba(200, 35, 44, 0.28), inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+
+.brand-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 19px;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.brand-subtitle,
+.brand-sub {
+  font-size: 11.5px;
+  color: var(--muted);
+  display: block;
+  margin-top: 2px;
+}
+
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.nav-link-btn,
+.nav-tab {
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ink-2);
+  font-weight: 600;
+  font-size: 13.5px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.16s ease;
+}
+
+.nav-link-btn:hover,
+.nav-tab:hover {
+  background: var(--surface-sunken);
+  color: var(--ink);
+}
+
+.nav-link-btn.active,
+.nav-tab[aria-current='page'] {
+  background: var(--ink);
+  color: var(--surface);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.situation-pill,
+.situation-trigger {
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--line-strong);
+  background: var(--surface-raised);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 600;
+  transition: all 0.16s ease;
+}
+
+.situation-pill:hover,
+.situation-trigger:hover {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+
+.situation-pill-dot,
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--alpine);
+  box-shadow: 0 0 0 3px var(--alpine-soft);
+}
+
+.situation-pill-meta {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+@media (max-width: 900px) {
+  .situation-pill-meta {
+    display: none;
+  }
+}
+
+.lang-switch {
+  display: inline-flex;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-pill);
+  padding: 2px;
+  background: var(--surface-sunken);
+}
+
+.lang-switch button,
+.lang-btn {
+  border: 0;
+  background: transparent;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  color: var(--muted);
+  transition: all 0.15s ease;
+}
+
+.lang-switch button.active,
+.lang-btn[aria-pressed='true'] {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.theme-btn,
+.icon-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+  font-size: 15px;
+  transition: all 0.15s ease;
+}
+
+.theme-btn:hover,
+.icon-btn:hover {
+  border-color: var(--primary);
+  transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   EDITORIAL HERO & AUSTRIAN FISCAL RIBBON
+   ========================================================================== */
+.editorial-hero {
+  margin-top: 24px;
+  background:
+    radial-gradient(circle at 92% 18%, var(--primary-soft), transparent 42%),
+    radial-gradient(circle at 75% 88%, var(--alpine-soft), transparent 46%),
+    var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 30px 34px;
+  box-shadow: var(--shadow-card);
+  position: relative;
+  overflow: hidden;
+}
+
+.editorial-hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 6px;
+  background: linear-gradient(
+    180deg,
+    var(--primary) 0%,
+    var(--primary) 36%,
+    #ffffff 36%,
+    #ffffff 64%,
+    var(--primary) 64%,
+    var(--primary) 100%
+  );
+}
+
+.hero-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.hero-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--primary);
+  background: var(--primary-soft);
+  border: 1px solid var(--primary-border);
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  margin-bottom: 10px;
+}
+
+.hero-headline,
+.hero-h1 {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 3.5vw, 42px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.07;
+  margin: 0 0 10px;
+}
+
+.hero-headline em,
+.hero-h1 em {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-style: italic;
+  color: var(--primary);
+}
+
+.hero-lead {
+  color: var(--ink-2);
+  max-width: 72ch;
+  margin: 0;
+  font-size: 15.5px;
+  line-height: 1.55;
+}
+
+.hero-highlights-strip {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.hero-stat-pill {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+}
+
+.hero-stat-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.hero-stat-icon--spruce {
+  background: var(--alpine-soft);
+  color: var(--alpine);
+  border: 1px solid var(--alpine-border);
+}
+
+.hero-stat-icon--vermilion {
+  background: var(--primary-soft);
+  color: var(--primary);
+  border: 1px solid var(--primary-border);
+}
+
+.hero-stat-icon--danube {
+  background: var(--danube-soft);
+  color: var(--danube);
+  border: 1px solid var(--danube-border);
+}
+
+.view-toggle-group,
+.segmented-toggle {
+  display: inline-flex;
+  background: var(--surface-sunken);
+  padding: 3px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line-strong);
+}
+
+.view-toggle-btn,
+.seg-btn {
+  border: 0;
+  background: transparent;
+  padding: 7px 14px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.view-toggle-btn.active,
+.seg-btn[aria-pressed='true'] {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+}
+
+/* ==========================================================================
+   INLINE SITUATION ACCORDION & FORM CONTROLS
+   ========================================================================== */
+.situation-banner,
+.situation-accordion {
+  margin-top: 18px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.situation-banner-header {
+  padding: 15px 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  background: var(--surface-raised);
+  transition: background-color 0.15s ease;
+}
+
+.situation-banner-header:hover {
+  background: color-mix(in srgb, var(--surface-raised) 60%, var(--surface-sunken));
+}
+
+.situation-summary-strip {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.summary-chip,
+.at-chip {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  color: var(--ink-2);
+}
+
+.situation-body {
+  padding: 22px 24px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.preset-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.preset-pill {
+  padding: 7px 13px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-strong);
+  background: var(--surface-raised);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.preset-pill:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.situation-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(285px, 1fr));
+  gap: 18px;
+}
+
+.field-box,
+.field-card {
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.field-title,
+.field-label {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--ink);
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.field-value-badge {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--primary);
+  background: var(--primary-soft);
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.field-hint {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0;
+  line-height: 1.45;
+}
+
+.range-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.range-row input[type='range'],
+.at-range {
+  width: 100%;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.num-input-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  padding: 4px 10px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.num-input-wrap input {
+  width: 72px;
+  border: 0;
+  background: transparent;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--primary);
+  outline: none;
+}
+
+.at-input,
+.at-select,
+.text-input,
+.select-input {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 500;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.at-input:focus,
+.at-select:focus,
+.text-input:focus,
+.select-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+  outline: none;
+}
+
+/* Child-state-based styling with :has() + mandatory fallback (modern-web-guidance: child-state-based-styling) */
+.choice-pill,
+.choice-card {
+  --pill-bg: var(--surface);
+  --pill-text: var(--ink-2);
+  --pill-border: var(--line-strong);
+
+  background-color: var(--pill-bg);
+  color: var(--pill-text);
+  border: 1px solid var(--pill-border);
+  border-radius: var(--radius-sm);
+  padding: 8px 13px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  transition: background-color 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s;
+  user-select: none;
+}
+
+.choice-pill:hover,
+.choice-card:hover {
+  border-color: var(--ink);
+}
+
+.choice-pill input,
+.choice-card input {
+  accent-color: var(--primary);
+  margin: 0;
+}
+
+.choice-pill:has(input:checked),
+.choice-card:has(input:checked) {
+  --pill-bg: var(--primary-soft);
+  --pill-text: var(--primary);
+  --pill-border: var(--primary);
+  box-shadow: inset 0 0 0 1px var(--primary-border);
+}
+
+@supports not selector(:has(*)) {
+  .choice-pill.is-active,
+  .choice-card.is-active {
+    --pill-bg: var(--primary-soft);
+    --pill-text: var(--primary);
+    --pill-border: var(--primary);
+  }
+}
+
+.choice-grid,
+.body-chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ==========================================================================
+   FILTER DECK & RESULTS BAR
+   ========================================================================== */
+.filter-deck,
+.filter-panel {
+  margin-top: 18px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 22px 26px;
+  box-shadow: var(--shadow-card);
+}
+
+.filter-row-grid,
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(195px, 1fr));
+  gap: 14px;
+}
+
+.results-bar,
+.results-status-bar {
+  margin: 22px 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.results-count {
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+/* ==========================================================================
+   CAR CARDS & BESPOKE CAR VISUAL STAGE (AUSTRIAN PLATES + SILHOUETTES)
+   ========================================================================== */
+.car-grid,
+.cars-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(375px, 1fr));
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 480px) {
+  .car-grid,
+  .cars-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.car-card {
+  --card-border: var(--line);
+  background: var(--surface);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  padding: 20px 22px;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.2s ease;
+}
+
+.car-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-elevated);
+  --card-border: var(--line-strong);
+}
+
+/* Car Visual Stage (Studio Cutout Car Photo on White + Austrian License Plate Overlay) */
+.car-visual-stage {
+  background: #ffffff;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 16 / 9.4;
+  min-height: 206px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 10px 12px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.8);
+}
+
+.car-visual-stage--compact {
+  aspect-ratio: 16 / 9;
+  min-height: 164px;
+}
+
+.car-photo-frame {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 22px 8px 10px;
+}
+
+.car-stage-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center center;
+  display: block;
+  transition: transform 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.car-card:hover .car-stage-photo {
+  transform: scale(1.035);
+}
+
+.car-photo-vignette {
+  display: none;
+}
+
+.car-stage-meta {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.car-stage-bottom-badge {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.stage-fiscal-pill {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #f8fafc;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.stage-fiscal-pill--ev {
+  background: rgba(16, 82, 59, 0.88);
+  color: #ecfdf5;
+  border-color: rgba(110, 231, 183, 0.45);
+}
+
+/* Authentic Austrian License Plate (Grünes E-Kennzeichen for BEVs) */
+.at-plate {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1.5px solid #1e293b;
+  border-radius: 4px;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 800;
+  color: #0f172a;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.24);
+  position: relative;
+}
+
+.at-plate::before,
+.at-plate::after {
+  content: '';
+  position: absolute;
+  left: 20px;
+  right: 0;
+  height: 2px;
+  background: #c8232c;
+  pointer-events: none;
+}
+
+.at-plate::before {
+  top: 0;
+}
+
+.at-plate::after {
+  bottom: 0;
+}
+
+.at-plate--ev {
+  color: #0f6938;
+  border-color: #0f6938;
+}
+
+.at-plate-eu {
+  width: 20px;
+  height: 100%;
+  background: #003399;
+  color: #ffffff;
+  font-size: 10px;
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+}
+
+.at-plate-code {
+  padding: 0 4px 0 6px;
+  letter-spacing: 0.02em;
+}
+
+.at-plate-crest {
+  width: 6px;
+  height: 10px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.at-plate-num {
+  padding: 0 7px 0 5px;
+  letter-spacing: 0.03em;
+}
+
+.car-stage-pills {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.stage-spec-chip {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(248, 250, 252, 0.94);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(15, 23, 42, 0.15);
+  color: #0f172a;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+}
+
+.table-car-thumb {
+  width: 76px;
+  height: 46px;
+  border-radius: 6px;
+  object-fit: contain;
+  object-position: center center;
+  background: #ffffff;
+  padding: 2px 3px;
+  border: 1px solid var(--line-strong);
+  flex-shrink: 0;
+}
+
+.car-card-header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.car-brand-kicker {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+
+.car-model-title {
+  font-family: var(--font-display);
+  font-size: 19.5px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.22;
+  margin: 2px 0 0;
+}
+
+.car-model-title a {
+  color: var(--ink);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.car-model-title a:hover {
+  color: var(--primary);
+}
+
+.car-spec-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.spec-pill {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--surface-sunken);
+  color: var(--ink-2);
+  border: 1px solid var(--line);
+}
+
+.spec-pill.bev-badge {
+  background: var(--alpine-soft);
+  color: var(--alpine);
+  border-color: var(--alpine-border);
+}
+
+/* Price Hero Box inside Car Card */
+.car-price-hero,
+.wallet-box {
+  background: var(--surface-raised);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.price-caption {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.best-form-tag {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  background: var(--alpine-soft);
+  color: var(--alpine);
+  border: 1px solid var(--alpine-border);
+}
+
+.price-main-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.price-monthly-figure {
+  font-family: var(--font-display);
+  font-size: 31px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  line-height: 1;
+}
+
+.price-monthly-unit {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-left: 4px;
+}
+
+.span-bar-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 2px;
+}
+
+.span-meta-row {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.span-track {
+  height: 7px;
+  border-radius: 999px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--line);
+  position: relative;
+  overflow: hidden;
+}
+
+.span-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, var(--alpine), var(--primary));
+  border-radius: 999px;
+  opacity: 0.78;
+}
+
+/* Mini 4-Form Comparison Matrix inside Card */
+.card-mini-forms {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--line);
+}
+
+.mini-form-cell {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 4px 6px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.mini-form-cell:hover {
+  border-color: var(--primary);
+}
+
+.mini-form-cell.is-best {
+  background: var(--alpine-soft);
+  border-color: var(--alpine-border);
+}
+
+.mini-form-name {
+  display: block;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mini-form-val {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* Austrian Tax Breakdown Rows inside Card */
+.car-tax-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12.5px;
+  padding: 2px 2px 0;
+}
+
+.tax-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 65%, transparent);
+}
+
+.tax-row:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.tax-row-label {
+  color: var(--muted);
+}
+
+.tax-row-val {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.tax-row-val.zero-tax {
+  color: var(--alpine);
+}
+
+/* Buttons */
+.car-card-actions,
+.card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.btn-primary,
+.btn-secondary,
+.btn {
+  min-height: 40px;
+  padding: 0 15px;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-decoration: none;
+  transition: all 0.16s ease;
+}
+
+.btn-primary,
+.btn--primary {
+  flex: 1;
+  background: var(--primary);
+  border: 1px solid var(--primary);
+  color: var(--on-primary);
+  box-shadow: 0 2px 6px rgba(200, 35, 44, 0.22);
+}
+
+.btn-primary:hover,
+.btn--primary:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.btn-secondary,
+.btn {
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  color: var(--ink);
+}
+
+.btn-secondary:hover,
+.btn:hover {
+  border-color: var(--ink);
+  background: var(--surface-raised);
+}
+
+.btn-secondary.active {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--surface);
+}
+
+/* ==========================================================================
+   RESPONSIVE DATA TABLE (modern-web-guidance: responsive-table)
+   ========================================================================== */
+.table-wrapper {
+  margin-top: 10px;
+  overflow: auto;
+  max-inline-size: 100%;
+  max-block-size: min(740px, 82vh);
+  container-type: inline-size;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.at-data-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13.5px;
+}
+
+.at-data-table thead {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 2;
+  background: var(--surface-raised);
+}
+
+.at-data-table th,
+.at-data-table td {
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.at-data-table thead th {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  background: var(--surface-raised);
+  white-space: nowrap;
+}
+
+.at-data-table tbody th {
+  position: sticky;
+  inset-inline-start: 0;
+  z-index: 1;
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+  font-weight: 600;
+  min-width: 220px;
+}
+
+.at-data-table tbody tr:hover td,
+.at-data-table tbody tr:hover th {
+  background: var(--surface-raised);
+}
+
+@container (width < 680px) {
+  .at-data-table,
+  .at-data-table thead,
+  .at-data-table tbody,
+  .at-data-table tr,
+  .at-data-table th,
+  .at-data-table td {
+    display: block;
+  }
+
+  .at-data-table thead {
+    /* MANDATORY: Hide column header from layout and screen readers. */
+    display: none;
+  }
+
+  .at-data-table tr {
+    margin: 12px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+
+  .at-data-table tbody th {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 2;
+    background: var(--surface-raised);
+    border-right: 0;
+  }
+
+  .at-data-table td:nth-child(2)::before {
+    content: var(--label-2) ': ';
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .at-data-table td:nth-child(3)::before {
+    content: var(--label-3) ': ';
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .at-data-table td:nth-child(4)::before {
+    content: var(--label-4) ': ';
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .at-data-table td:nth-child(5)::before {
+    content: var(--label-5) ': ';
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .at-data-table td:nth-child(6)::before {
+    content: var(--label-6) ': ';
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .at-data-table td:nth-child(7)::before {
+    content: var(--label-7) ': ';
+    color: var(--muted);
+    font-weight: 600;
+  }
+}
+
+/* ==========================================================================
+   CAR DETAIL VIEW, WATERFALL, ZULASSUNGSSCHEIN & TRACE INSPECTOR
+   ========================================================================== */
+.detail-view {
+  padding-top: 20px;
+}
+
+.detail-hero {
+  background:
+    radial-gradient(circle at 90% 12%, var(--primary-soft), transparent 45%),
+    var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 28px 30px;
+  box-shadow: var(--shadow-card);
+  margin-bottom: 20px;
+}
+
+.form-tabs-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+  gap: 10px;
+}
+
+.form-tab-btn {
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line-strong);
+  background: var(--surface-raised);
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  transition: all 0.16s ease;
+}
+
+.form-tab-btn:hover {
+  border-color: var(--primary);
+  transform: translateY(-1px);
+}
+
+.form-tab-btn.active {
+  background: var(--ink);
+  color: var(--surface);
+  border-color: var(--ink);
+  box-shadow: var(--shadow-card);
+}
+
+.form-tab-btn .tab-price {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.form-tab-btn.active .tab-price {
+  color: #ffffff;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.95fr;
+  gap: 22px;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.waterfall-card,
+.tornado-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: 24px 26px;
+  box-shadow: var(--shadow-card);
+}
+
+.wf-columns {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wf-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 1.1fr) 1.6fr 95px;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--surface-raised);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.wf-row:hover {
+  border-color: var(--primary);
+  background: var(--surface);
+}
+
+.wf-row.selected {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+  box-shadow: inset 0 0 0 1px var(--primary-border);
+}
+
+.wf-label {
+  font-weight: 700;
+  font-size: 13.5px;
+}
+
+.wf-bar-track {
+  height: 14px;
+  background: var(--surface-sunken);
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+}
+
+.wf-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.wf-bar-fill.kind-base {
+  background: var(--danube);
+}
+
+.wf-bar-fill.kind-add {
+  background: #475569;
+}
+
+.wf-bar-fill.kind-deduct {
+  background: var(--alpine);
+}
+
+.wf-bar-fill.kind-warn {
+  background: var(--amber);
+}
+
+.wf-bar-fill.kind-total {
+  background: var(--primary);
+}
+
+.wf-amount {
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  font-weight: 700;
+  text-align: right;
+}
+
+.trace-inspector {
+  margin-top: 18px;
+  background: var(--surface-raised);
+  border: 2px solid var(--primary);
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+  box-shadow: var(--shadow-card);
+}
+
+.trace-formula-box,
+.trace-formula-code {
+  margin-top: 10px;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.55;
+  padding: 12px 14px;
+  background: var(--surface-sunken);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+
+.tornado-row {
+  display: grid;
+  grid-template-columns: minmax(165px, 1.2fr) 1.2fr 88px;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+
+/* Österreichischer Zulassungsschein Card */
+.zulassungsschein-card {
+  background:
+    linear-gradient(135deg, rgba(20, 99, 72, 0.06), rgba(30, 67, 104, 0.05)),
+    var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  box-shadow: var(--shadow-card);
+}
+
+.zs-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed var(--line-strong);
+  margin-bottom: 14px;
+}
+
+.zs-kicker {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: var(--alpine);
+  display: block;
+}
+
+.zs-title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  margin: 2px 0 0;
+}
+
+.zs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.zs-cell {
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.zs-field-code {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.zs-field-val {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.zs-field-note {
+  font-size: 11px;
+  color: var(--ink-2);
+}
+
+/* ==========================================================================
+   FLOATING COMPARE DOCK
+   ========================================================================== */
+.compare-dock {
+  position: fixed;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 35;
+  width: min(1120px, calc(100vw - 28px));
+  background: color-mix(in srgb, var(--ink) 94%, transparent);
+  backdrop-filter: blur(12px);
+  color: var(--surface);
+  padding: 12px 18px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-elevated);
+}
+
+.compare-dock-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.compare-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.compare-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 11px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 12.5px;
+}
+
+.compare-chip button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  padding: 0 2px;
+  font-weight: 700;
+}
+
+/* ==========================================================================
+   TOP-LAYER DIALOG ENTRY & EXIT ANIMATIONS
+   (modern-web-guidance: light-dismiss-a-dialog & animate-to-from-top-layer)
+   ========================================================================== */
+dialog.at-modal {
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--ink);
+  width: min(820px, calc(100vw - 32px));
+  max-height: 88dvh;
+  padding: 0;
+  box-shadow: var(--shadow-elevated);
+  overflow: auto;
+
+  /* Closed / Exit state */
+  opacity: 0;
+  transform: scale(0.94) translateY(8px);
+  transition-property: opacity, transform, display, overlay;
+  transition-duration: 0.26s;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  transition-behavior: allow-discrete;
+}
+
+dialog.at-modal::backdrop {
+  background-color: rgba(12, 17, 23, 0);
+  backdrop-filter: blur(0px);
+  transition-property: background-color, backdrop-filter, display, overlay;
+  transition-duration: 0.26s;
+  transition-timing-function: ease-out;
+  transition-behavior: allow-discrete;
+}
+
+:is(dialog.at-modal[open]):where(:not([data-closing])) {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+
+  @starting-style {
+    opacity: 0;
+    transform: scale(0.94) translateY(8px);
+  }
+
+  &::backdrop {
+    background-color: rgba(12, 17, 23, 0.56);
+    backdrop-filter: blur(4px);
+
+    @starting-style {
+      background-color: rgba(12, 17, 23, 0);
+      backdrop-filter: blur(0px);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  dialog.at-modal {
+    transform: none;
+    transition-duration: 0.1s;
+  }
+
+  @starting-style {
+    dialog.at-modal[open] {
+      transform: none;
+    }
+  }
+
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+.modal-inner {
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
