@@ -14,9 +14,7 @@ const BUNDESLAND_PLATE_PREFIX: Record<BundeslandId, { code: string; coatColor: s
 };
 
 export function getCarImageUrl(modelId: string): string {
-  const base = import.meta.env.BASE_URL || './';
-  const normalizedBase = base.endsWith('/') ? base : `${base}/`;
-  return `${normalizedBase}cars/${modelId.replace('/', '-')}.jpg?v=studio2`;
+  return `cars/${modelId.replace('/', '-')}.jpg?v=studio2`;
 }
 
 interface CarVisualStageProps {
