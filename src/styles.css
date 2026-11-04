@@ -1875,3 +1875,150 @@ dialog.at-modal::backdrop {
   padding-bottom: 14px;
   border-bottom: 1px solid var(--line);
 }
+
+/* ==========================================================================
+   FAHRWERT FINTECH & PREMIUM DESIGN SYSTEM HELPERS
+   ========================================================================== */
+[data-direction='fintech'] {
+  color-scheme: light;
+  --bg: #F4F5F1;
+  --surface: #FFFFFF;
+  --surface-raised: #F9FAF7;
+  --surface-sunken: #ECEEE9;
+  --ink: #0F1A17;
+  --ink-2: #47524C;
+  --muted: #5D6862;
+  --faint: #9AA39C;
+  --line: #E3E6E0;
+  --line-strong: #D5D9D2;
+  --primary: #0E7C5A;
+  --primary-soft: #E2F3EA;
+  --primary-border: #0E7C5A;
+}
+
+[data-direction='premium'] {
+  color-scheme: dark;
+  --bg: #0C0C0D;
+  --surface: #151517;
+  --surface-raised: #1C1C1F;
+  --surface-sunken: #0C0C0D;
+  --ink: #F2F0EB;
+  --ink-2: #CFCCC5;
+  --muted: #BDBAB3;
+  --faint: #86837D;
+  --line: #222225;
+  --line-strong: #2A2A2E;
+  --primary: #C9B18A;
+  --primary-soft: #2E2820;
+  --primary-border: #C9B18A;
+}
+
+body.fahrwert-body {
+  background-image: none;
+}
+
+.fw-hero-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 40px;
+  align-items: center;
+}
+
+.fw-sit-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.fw-drive-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 24px;
+}
+
+.fw-top3-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.fw-prov-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 12px;
+}
+
+.fw-list-layout {
+  display: grid;
+  grid-template-columns: 270px 1fr;
+  gap: 28px;
+  align-items: start;
+}
+
+.fw-detail-hero-grid {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  gap: 32px;
+  align-items: center;
+}
+
+.fw-detail-forms-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.fw-detail-main-grid {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.fw-calc-dw-grid {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+.fw-calc-offer-grid {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 1060px) {
+  .fw-sit-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .fw-top3-grid {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+  .fw-prov-grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+  .fw-list-layout {
+    grid-template-columns: 1fr;
+  }
+  .fw-detail-hero-grid,
+  .fw-detail-main-grid,
+  .fw-calc-dw-grid,
+  .fw-calc-offer-grid,
+  .fw-hero-grid {
+    grid-template-columns: 1fr;
+  }
+  .fw-detail-forms-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .fw-sit-grid,
+  .fw-detail-forms-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
