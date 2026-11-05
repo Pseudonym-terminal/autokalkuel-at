@@ -99,8 +99,10 @@ export const App: React.FC = () => {
   // Filters & sorting on 'list' screen
   const [fuels, setFuels] = useState<FuelType[]>(['bev', 'phev', 'hev', 'petrol', 'diesel']);
   const [bodies, setBodies] = useState<BodyCategory[]>(['suv', 'hatchback', 'estate', 'sedan']);
+  const [selectedBrand, setSelectedBrand] = useState<string>('ALL');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [minRange, setMinRange] = useState<number>(0);
-  const [maxPrice, setMaxPrice] = useState<number>(80000);
+  const [maxPrice, setMaxPrice] = useState<number>(90000);
   const [onlyOffers, setOnlyOffers] = useState<boolean>(false);
   const [sortBy, setSortBy] = useState<SortMode>('total');
   const [listLayout, setListLayout] = useState<ListLayoutMode>('cards');
@@ -248,11 +250,20 @@ export const App: React.FC = () => {
     return [...evaluatedCars].sort((a, b) => a.best.total - b.best.total).slice(0, 3);
   }, [evaluatedCars]);
 
+  const allBrands = useMemo(() => {
+    return Array.from(new Set(FAHRWERT_CARS.map((c) => c.brand))).sort((a, b) =>
+      a.localeCompare(b, 'de')
+    );
+  }, []);
+
   const filteredCars = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
     return evaluatedCars
       .filter(({ car }) => {
         if (!fuels.includes(car.fuel)) return false;
         if (!bodies.includes(car.body)) return false;
+        if (selectedBrand !== 'ALL' && car.brand !== selectedBrand) return false;
+        if (q && !`${car.brand} ${car.model}`.toLowerCase().includes(q)) return false;
         if (car.range < minRange) return false;
         if (car.price > maxPrice) return false;
         if (onlyOffers && !car.offer) return false;
@@ -263,7 +274,7 @@ export const App: React.FC = () => {
         if (sortBy === 'price') return a.car.price - b.car.price;
         return b.car.range - a.car.range;
       });
-  }, [evaluatedCars, fuels, bodies, minRange, maxPrice, onlyOffers, sortBy]);
+  }, [evaluatedCars, fuels, bodies, selectedBrand, searchQuery, minRange, maxPrice, onlyOffers, sortBy]);
 
   const setCarOverride = (carId: string, key: keyof CarOverrides, val: number | null) => {
     setOverridesMap((prev) => {
@@ -975,6 +986,54 @@ export const App: React.FC = () => {
             top: 80,
           }}
         >
+          <div style={{ marginBottom: 16 }}>
+            <input
+              type="search"
+              placeholder={lang === 'sv' ? 'Sök märke eller modell...' : 'Marke oder Modell suchen...'}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '8px 11px',
+                borderRadius: direction === 'fintech' ? 10 : 6,
+                border: `1px solid ${PAL.line}`,
+                background: PAL.inputBg,
+                color: PAL.ink,
+                fontSize: 12.5,
+                fontWeight: 500,
+              }}
+            />
+          </div>
+
+          <div style={{ marginBottom: 18 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', color: PAL.muted, marginBottom: 8 }}>
+              {lang === 'sv' ? 'MÄRKE' : 'MARKE'}
+            </div>
+            <select
+              value={selectedBrand}
+              onChange={(e) => setSelectedBrand(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '8px 10px',
+                borderRadius: direction === 'fintech' ? 10 : 6,
+                border: `1px solid ${PAL.line}`,
+                background: PAL.inputBg,
+                color: PAL.ink,
+                fontSize: 12.5,
+                fontWeight: 600,
+              }}
+            >
+              <option value="ALL">
+                {lang === 'sv' ? `Alla märken (${allBrands.length})` : `Alle Marken (${allBrands.length})`}
+              </option>
+              {allBrands.map((b) => (
+                <option key={b} value={b}>
+                  {b}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', color: PAL.muted, marginBottom: 10 }}>
             {lang === 'sv' ? 'DRIVLINA' : 'ANTRIEB'}
           </div>
@@ -1058,8 +1117,8 @@ export const App: React.FC = () => {
             </div>
             <input
               type="range"
-              min={30000}
-              max={80000}
+              min={25000}
+              max={90000}
               step={2500}
               value={maxPrice}
               onChange={(e) => setMaxPrice(Number(e.target.value))}
