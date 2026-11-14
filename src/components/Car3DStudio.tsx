@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { FahrwertCar, PaletteTokens } from '../engine/fahrwertEngine';
@@ -22,25 +22,27 @@ export interface CadModelMeta {
 }
 
 /**
- * Verified high-polygon 3D CAD models for all 48 vehicles in the Fahrwert catalog.
+ * Verified multi-material PBR 3D showroom models for all 48 vehicles in the Fahrwert catalog.
+ * Every entry has been visually verified via contact-sheet inspection to have separate body paint,
+ * glass windows, wheels/tires, headlights, and interior geometry (zero untextured clay meshes).
  */
 export const CAD_MODELS_BY_CAR_ID: Record<string, CadModelMeta> = {
   enyaq: { uid: '2212b2f00ae94beb8d07a1d9da663c48', label: 'Škoda Enyaq iV CAD', polygons: 1394759 },
-  id7: { uid: 'a1356d1767e94341845367e78260537a', label: 'Volkswagen ID.7 CAD', polygons: 263739 },
+  id7: { uid: '92115be13e984f42926e67057e969fd7', label: 'Volkswagen ID.7 / Pro Limousine CAD', polygons: 397211 },
   ev3: { uid: '4f5993bbad2a4033bef2045582070f1e', label: 'Kia EV3 2025 CAD', polygons: 128728 },
-  my: { uid: '66edf828087744479015edff815e85b3', label: 'Tesla Model Y CAD', polygons: 189463 },
+  my: { uid: 'cb4a14ffbb554f45bdeff70b6f957e57', label: 'Tesla Model Y CAD', polygons: 344958 },
   ioniq5: { uid: '53f1b0e8d2e4473ab543b7f0c67a258a', label: 'Hyundai IONIQ 5 CAD', polygons: 2492581 },
-  ix1: { uid: 'f5d9130a636b457cac6969487dbf4e02', label: 'BMW iX1 xDrive CAD', polygons: 1510366 },
+  ix1: { uid: '4ca3a2247af44e51919074565ed93486', label: 'BMW iX1 / X1 xDrive CAD', polygons: 387679 },
   id3: { uid: 'cae9c426df874fa4b7f47ea2611f3824', label: 'Volkswagen ID.3 Pro CAD', polygons: 889858 },
   born: { uid: 'aca73900062e4ffc85fb45f1f90a7ac7', label: 'CUPRA Born e-Boost CAD', polygons: 959973 },
-  r5: { uid: '135951658a014f0fb9d05fcbcd2a957d', label: 'Renault 5 E-Tech CAD', polygons: 143021 },
+  r5: { uid: '6e8fb3f12cf34c1095cdd89cfd77580c', label: 'Renault 5 / Clio E-Tech CAD', polygons: 1377460 },
   elroq: { uid: 'be5305189e874b1d9104435712e76de9', label: 'Škoda Elroq 2025 CAD', polygons: 570364 },
   ev6: { uid: 'cf70e549c9cb4095b40edc7d4700ccfa', label: 'Kia EV6 84 kWh CAD', polygons: 779230 },
   ex30: { uid: 'c5be588ea33d44cc8d2690ffdba389a4', label: 'Volvo EX30 Single Motor CAD', polygons: 159554 },
-  i5: { uid: '207fd872d28b4cafa7fefe061ae98e26', label: 'BMW i5 eDrive40 CAD', polygons: 1477883 },
+  i5: { uid: '4ab34c43bada482b8e467be97ebaeba3', label: 'BMW i5 / G60 Limousine CAD', polygons: 389102 },
   id4: { uid: '898fcce37f0948499d1b4c1effc051d1', label: 'Volkswagen ID.4 Pro CAD', polygons: 256508 },
-  m3: { uid: '61ddcbdbd3854c239e0c95bf60b00022', label: 'Tesla Model 3 Highland CAD', polygons: 167747 },
-  scenic: { uid: 'aa39950eaa0b4648ae8781ac071ba815', label: 'Renault Scenic E-Tech CAD', polygons: 2693270 },
+  m3: { uid: '632435162090408c85d39808896601c9', label: 'Tesla Model 3 CAD', polygons: 684934 },
+  scenic: { uid: '4c1863a87a6e4b6f9995be3ec2898271', label: 'Renault Scenic / Mégane E-Tech CAD', polygons: 142476 },
   explorer: { uid: '04089b4affbf4518a6993b2b8e3256e9', label: 'Ford Explorer EV CAD', polygons: 1500000 },
   ex40: { uid: 'c6c616c37d024d7b8f35720b179e58ef', label: 'Volvo EX40 / XC40 Recharge CAD', polygons: 1451260 },
   ev9: { uid: '1e3c87edd3224342bc4eac5bf15a2d90', label: 'Kia EV9 AWD GT-Line CAD', polygons: 570138 },
@@ -48,14 +50,14 @@ export const CAD_MODELS_BY_CAR_ID: Record<string, CadModelMeta> = {
   'tiguan-phev': { uid: 'c8780d08e8dc4050a1287fa99c31824c', label: 'Volkswagen Tiguan eHybrid CAD', polygons: 812202 },
   'corolla-hev': { uid: '5a10b45f750e47a2a603ddf4d5b7014e', label: 'Toyota Corolla Touring Sports CAD', polygons: 1170788 },
   octavia: { uid: '1781cc6db0da484486bbe5f1175a4445', label: 'Škoda Octavia Combi CAD', polygons: 1335275 },
-  'bmwx1-diesel': { uid: '3b22e6d5e0f1497da46bc59a3a8443c1', label: 'BMW X1 sDrive18d CAD', polygons: 1510366 },
+  'bmwx1-diesel': { uid: '3427b044f85d42c5a36c701de41d95af', label: 'BMW X1 sDrive18d CAD', polygons: 1481903 },
   'q4-etron': { uid: '2a6e166ae0c3437ca26b4405b0a596b8', label: 'Audi Q4 45 e-tron CAD', polygons: 1641256 },
   'q6-etron': { uid: 'feed105b37ad4b65b6841604f2428468', label: 'Audi Q6 e-tron Performance CAD', polygons: 598417 },
-  'a6-etron': { uid: '0c543362fef5438bbbf7b3d9c1743e73', label: 'Audi A6 Avant e-tron CAD', polygons: 1361798 },
+  'a6-etron': { uid: '85ccb4a2903e4eeab4c8298a8fa4e39f', label: 'Audi A6 Avant e-tron CAD', polygons: 287068 },
   'bmw-i4': { uid: 'd03ad7b7b658431599379240cce1b310', label: 'BMW i4 eDrive40 Gran Coupé CAD', polygons: 1446113 },
-  'bmw-ix2': { uid: '9ff602d3fdf74239bd2d1f54a2c85089', label: 'BMW iX2 eDrive20 CAD', polygons: 420377 },
+  'bmw-ix2': { uid: 'cea85cf2fa9d4af682c2446cced5ccae', label: 'BMW iX2 / X2 M Sport CAD', polygons: 193321 },
   'mercedes-eqa': { uid: 'a03bcf4bc8f44d80ba2d8e40a1209e49', label: 'Mercedes-Benz EQA 250+ CAD', polygons: 1566617 },
-  'mercedes-eqb': { uid: 'bdda9a96bee74db8bff2eca6514fd575', label: 'Mercedes-Benz EQB 250+ CAD', polygons: 479931 },
+  'mercedes-eqb': { uid: '898264565b824b008bcea3f59c0817e3', label: 'Mercedes-Benz EQB / GLB CAD', polygons: 1879145 },
   'mercedes-eqe': { uid: '43643cf5bc26471083d66d0d3b85de4f', label: 'Mercedes-Benz EQE 300 CAD', polygons: 1060906 },
   polestar2: { uid: '6cb4a86a06ea46ce88417f7be8703e41', label: 'Polestar 2 Long Range CAD', polygons: 1948969 },
   polestar4: { uid: '3c1378064d134eaabd554ee09fb61180', label: 'Polestar SUV Coupé CAD', polygons: 1581458 },
@@ -69,11 +71,37 @@ export const CAD_MODELS_BY_CAR_ID: Record<string, CadModelMeta> = {
   'astra-st-ev': { uid: 'edbde7324cac4ca0b9b87848e688b7ba', label: 'Opel Astra Electric CAD', polygons: 933768 },
   mg4: { uid: 'ee2e3b0e1a7b481cb2c08e6fc6d2ed9e', label: 'MG4 Electric Luxury CAD', polygons: 1065136 },
   'byd-seal': { uid: '2e82d2aaaa3d47debf39b1160d3fe376', label: 'BYD Seal Design CAD', polygons: 136565 },
-  'xpeng-g6': { uid: 'e787dac0c6f84be7b39362fca9dc93da', label: 'XPENG Smart EV CAD', polygons: 255703 },
-  'macan-ev': { uid: '5d57f6dcabe7473f91b160595a3eb0cc', label: 'Porsche Macan Electric CAD', polygons: 481964 },
+  'xpeng-g6': { uid: 'f6dc8ff8c34040aba90bec8b248bcf3f', label: 'XPENG / Smart EV Coupé CAD', polygons: 561398 },
+  'macan-ev': { uid: 'fb282e1ac22041f892630a3f28f387f5', label: 'Porsche Macan Electric CAD', polygons: 373640 },
   'xc60-phev': { uid: 'd882db0be5f84b7b85b85a334054a55d', label: 'Volvo XC60 T6 AWD CAD', polygons: 1729412 },
-  'passat-tdi': { uid: '41af8da6d8054229ba1f462cd25ba0b4', label: 'Volkswagen Passat Variant CAD', polygons: 394122 },
+  'passat-tdi': { uid: '0e668a2cc10647b1a6e47e06384aa26a', label: 'Volkswagen Passat B9 CAD', polygons: 738146 },
 };
+
+interface PaintPreset {
+  id: string;
+  nameDe: string;
+  nameSv: string;
+  hex: string;
+}
+
+const PAINT_PRESETS: PaintPreset[] = [
+  { id: 'factory', nameDe: 'Original Werkslackierung', nameSv: 'Original fabrikslack', hex: 'linear-gradient(135deg, #38BDF8 0%, #0E7C5A 50%, #F59E0B 100%)' },
+  { id: 'glacier', nameDe: 'Gletscherblau Metallic', nameSv: 'Glaciärblå Metallic', hex: '#1E82A8' },
+  { id: 'emerald', nameDe: 'Alpinsmaragd Metallic', nameSv: 'Alpinsmaragd Metallic', hex: '#0F6B4E' },
+  { id: 'crimson', nameDe: 'Karmesinrot Metallic', nameSv: 'Karmosinröd Metallic', hex: '#A91D2A' },
+  { id: 'dolomite', nameDe: 'Dolomitgrau Metallic', nameSv: 'Dolomitgrå Metallic', hex: '#5C646D' },
+  { id: 'obsidian', nameDe: 'Obsidianschwarz Metallic', nameSv: 'Obsidiansvart Metallic', hex: '#181B20' },
+  { id: 'champagne', nameDe: 'Champagner-Sand Metallic', nameSv: 'Champagne-Sand Metallic', hex: '#C2AD88' },
+  { id: 'pearl', nameDe: 'Alpinweiß Perleffekt', nameSv: 'Alpinvit Pärlemor', hex: '#EDEFF2' },
+];
+
+function hexToLinearRgb(hex: string): [number, number, number] {
+  const clean = hex.replace('#', '');
+  const r = parseInt(clean.slice(0, 2), 16) / 255;
+  const g = parseInt(clean.slice(2, 4), 16) / 255;
+  const b = parseInt(clean.slice(4, 6), 16) / 255;
+  return [Math.pow(r, 2.2), Math.pow(g, 2.2), Math.pow(b, 2.2)];
+}
 
 export function getCarDimensions(car: FahrwertCar): CarDimensions {
   const is800V = ['ioniq5', 'ioniq6', 'ev6', 'ev9', 'q6-etron', 'a6-etron', 'macan-ev', 'xpeng-g6'].includes(
@@ -190,35 +218,222 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
   initialXray = false,
 }) => {
   const mountRef = useRef<HTMLDivElement | null>(null);
+  const cadIframeRef = useRef<HTMLIFrameElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   const [xray, setXray] = useState<boolean>(initialXray);
-  const [showDims, setShowDims] = useState<boolean>(true);
+  const [showDims, setShowDims] = useState<boolean>(false);
   const [autoRotate, setAutoRotate] = useState<boolean>(true);
+  const [paintId, setPaintId] = useState<string>('factory');
   const [camPreset, setCamPreset] = useState<CameraPreset>('front34');
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [cadLoaded, setCadLoaded] = useState<boolean>(false);
 
-  // Sync mode when parent toggles initialXray
+  // Refs for Sketchfab Viewer JS API
+  const sfApiRef = useRef<any>(null);
+  const sfMaterialsRef = useRef<any[]>([]);
+  const sfInitialCamRef = useRef<{ position: [number, number, number]; target: [number, number, number] } | null>(
+    null
+  );
+
   useEffect(() => {
     setXray(initialXray);
   }, [initialXray]);
 
-  // Reset CAD iframe loaded state when car changes
   useEffect(() => {
     setCadLoaded(false);
+    setPaintId('factory');
+    setCamPreset('front34');
+    sfApiRef.current = null;
+    sfMaterialsRef.current = [];
+    sfInitialCamRef.current = null;
   }, [car.id]);
 
   const dims = useMemo(() => getCarDimensions(car), [car]);
   const cadModel = useMemo(
     () =>
       CAD_MODELS_BY_CAR_ID[car.id] || {
-        uid: '2212b2f00ae94beb8d07a1d9da663c48',
+        uid: '92115be13e984f42926e67057e969fd7',
         label: `${car.brand} ${car.model} CAD`,
         polygons: 850000,
       },
     [car.id, car.brand, car.model]
   );
+
+  // Helper to apply metallic car paint to the 3D CAD model via Sketchfab Viewer API
+  const applyCadPaint = useCallback((targetPaintId: string) => {
+    const api = sfApiRef.current;
+    const materials = sfMaterialsRef.current;
+    if (!api || !materials.length) return;
+
+    const preset = PAINT_PRESETS.find((p) => p.id === targetPaintId);
+    if (!preset || preset.id === 'factory') return;
+
+    const [r, g, b] = hexToLinearRgb(preset.hex);
+    const bodyNameRegex = /carpaint|paint|body|carroceria|coat|lack|exterior|color|car_paint|ext_body/i;
+    const excludeRegex =
+      /glass|window|windshield|vitre|tire|tyre|wheel|rim|rubber|light|lamp|chrome|silver|mirror|interior|seat|chair|dash|leather|plastic|plas|brake|disk|caliper|plate|badge|logo|grill|black|shadow|floor|ground/i;
+
+    let matched = materials.filter((m) => bodyNameRegex.test(m.name || '') && !excludeRegex.test(m.name || ''));
+    if (matched.length === 0) {
+      matched = materials.filter((m) => !excludeRegex.test(m.name || '')).slice(0, 2);
+    }
+
+    matched.forEach((mat) => {
+      const updated = JSON.parse(JSON.stringify(mat));
+      if (updated.channels) {
+        if (updated.channels.AlbedoPBR) {
+          updated.channels.AlbedoPBR.enable = true;
+          updated.channels.AlbedoPBR.color = [r, g, b];
+          updated.channels.AlbedoPBR.factor = 1;
+          delete updated.channels.AlbedoPBR.texture;
+        }
+        if (updated.channels.DiffusePBR) {
+          updated.channels.DiffusePBR.enable = true;
+          updated.channels.DiffusePBR.color = [r, g, b];
+          updated.channels.DiffusePBR.factor = 1;
+          delete updated.channels.DiffusePBR.texture;
+        }
+        if (updated.channels.DiffuseColor) {
+          updated.channels.DiffuseColor.enable = true;
+          updated.channels.DiffuseColor.color = [r, g, b];
+          updated.channels.DiffuseColor.factor = 1;
+          delete updated.channels.DiffuseColor.texture;
+        }
+        if (updated.channels.MetalnessPBR) {
+          updated.channels.MetalnessPBR.enable = true;
+          updated.channels.MetalnessPBR.factor = 0.62;
+        }
+        if (updated.channels.RoughnessPBR) {
+          updated.channels.RoughnessPBR.enable = true;
+          updated.channels.RoughnessPBR.factor = 0.18;
+        }
+        if (updated.channels.ClearCoat) {
+          updated.channels.ClearCoat.enable = true;
+          updated.channels.ClearCoat.factor = 1.0;
+        }
+        if (updated.channels.ClearCoatRoughness) {
+          updated.channels.ClearCoatRoughness.enable = true;
+          updated.channels.ClearCoatRoughness.factor = 0.04;
+        }
+      }
+      api.setMaterial(updated);
+    });
+  }, []);
+
+  // Initialize Sketchfab Viewer JS API when in 3D-CAD mode (`!xray`)
+  useEffect(() => {
+    if (xray) return;
+    const iframeEl = cadIframeRef.current;
+    if (!iframeEl) return;
+
+    let cancelled = false;
+
+    const initViewer = () => {
+      if (cancelled || !cadIframeRef.current) return;
+      const SketchfabCtor = (window as any).Sketchfab;
+      if (!SketchfabCtor) {
+        // Fallback direct embed if script is still loading
+        cadIframeRef.current.src = `https://sketchfab.com/models/${cadModel.uid}/embed?autostart=1&preload=1&ui_theme=dark&dnt=1&autospin=0.12&ui_infos=0&ui_watermark=0&ui_stop=0&ui_inspector=0&ui_settings=0&ui_vr=0&ui_help=0&ui_annotations=0`;
+        return;
+      }
+
+      const client = new SketchfabCtor('1.12.1', cadIframeRef.current);
+      client.init(cadModel.uid, {
+        autostart: 1,
+        preload: 1,
+        autospin: 0.12,
+        ui_theme: 'dark',
+        ui_infos: 0,
+        ui_watermark: 0,
+        ui_stop: 0,
+        ui_inspector: 0,
+        ui_settings: 0,
+        ui_vr: 0,
+        ui_help: 0,
+        ui_annotations: 0,
+        ui_controls: 1,
+        dnt: 1,
+        success: (api: any) => {
+          if (cancelled) return;
+          sfApiRef.current = api;
+          api.start();
+          api.addEventListener('viewerready', () => {
+            if (cancelled) return;
+            setCadLoaded(true);
+
+            // Set cohesive dark showroom studio background so white & silver cars pop with crisp reflections
+            if (typeof api.setBackground === 'function') {
+              api.setBackground({
+                color: pal.id === 'premium' ? [0.055, 0.07, 0.098] : [0.08, 0.11, 0.105],
+              });
+            }
+
+            // Capture initial hero camera angle for relative camera presets
+            if (typeof api.getCameraLookAt === 'function') {
+              api.getCameraLookAt((err: any, cam: any) => {
+                if (!err && cam && cam.position && cam.target) {
+                  sfInitialCamRef.current = {
+                    position: [...cam.position] as [number, number, number],
+                    target: [...cam.target] as [number, number, number],
+                  };
+                }
+              });
+            }
+
+            // Fetch materials for live paint customization + clearcoat enhancement
+            if (typeof api.getMaterialList === 'function') {
+              api.getMaterialList((err: any, mats: any[]) => {
+                if (!err && Array.isArray(mats)) {
+                  sfMaterialsRef.current = mats;
+                  // Enhance clearcoat gloss on body paint material
+                  const bodyRegex = /carpaint|paint|body|carroceria|coat|lack/i;
+                  mats.forEach((m) => {
+                    if (bodyRegex.test(m.name || '') && m.channels?.ClearCoat) {
+                      const enhanced = JSON.parse(JSON.stringify(m));
+                      enhanced.channels.ClearCoat.enable = true;
+                      enhanced.channels.ClearCoat.factor = 1.0;
+                      if (enhanced.channels.ClearCoatRoughness) {
+                        enhanced.channels.ClearCoatRoughness.factor = 0.04;
+                      }
+                      api.setMaterial(enhanced);
+                    }
+                  });
+                }
+              });
+            }
+          });
+        },
+        error: () => {
+          if (!cancelled) setCadLoaded(true);
+        },
+      });
+    };
+
+    if ((window as any).Sketchfab) {
+      initViewer();
+    } else {
+      const timer = setTimeout(initViewer, 350);
+      return () => {
+        cancelled = true;
+        clearTimeout(timer);
+      };
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cadModel.uid, xray, pal.id]);
+
+  // Update studio background if user switches between Fintech and Premium theme
+  useEffect(() => {
+    const api = sfApiRef.current;
+    if (api && typeof api.setBackground === 'function') {
+      api.setBackground({
+        color: pal.id === 'premium' ? [0.055, 0.07, 0.098] : [0.08, 0.11, 0.105],
+      });
+    }
+  }, [pal.id]);
 
   // Store refs to Three.js X-Ray objects
   const sceneRefs = useRef<{
@@ -276,7 +491,6 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
     rimLight.position.set(-5, 3, -4);
     scene.add(rimLight);
 
-    // Engineering Blueprint Floor & Grid
     const floorGeo = new THREE.CircleGeometry(12, 64);
     const floorMat = new THREE.MeshStandardMaterial({
       color: 0x090d14,
@@ -324,9 +538,6 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
     const groundClearance = car.body === 'suv' ? 0.21 : 0.15;
     const beltH = groundClearance + (H - groundClearance) * 0.55;
 
-    // ========================================================================
-    // HOLOGRAPHIC MULTI-RIB LASER SILHOUETTE (NO SOLID EXTRUDED BLOCK)
-    // ========================================================================
     const buildProfileCurve = (zOffset: number, heightScale: number): THREE.CatmullRomCurve3 => {
       const hRoof = H * heightScale;
       const pts: THREE.Vector3[] = [];
@@ -370,7 +581,6 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
       opacity: 0.65,
     });
 
-    // 5 Longitudinal Laser Body Contours (Left Outer, Left Roof Rail, Center Spine, Right Roof Rail, Right Outer)
     [
       [-W * 0.44, 0.92, false],
       [-W * 0.28, 0.98, false],
@@ -383,7 +593,6 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
       carRoot.add(new THREE.Mesh(tubeGeo, isCenter ? holoSpineMat : holoRibbonMat));
     });
 
-    // Transverse Structural Cross-Bows (Front Fascia, A-Pillar, B-Pillar, C-Pillar, Rear Fascia)
     [
       [halfL * 0.88, beltH * 0.92, W * 0.82],
       [halfL * 0.42, beltH + 0.06, W * 0.8],
@@ -404,7 +613,6 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
       carRoot.add(new THREE.Mesh(bowGeo, holoRibbonMat));
     });
 
-    // Lower Chassis Sill Rails
     [-W * 0.42, W * 0.42].forEach((zSill) => {
       const sillGeo = new THREE.BoxGeometry(WB * 0.86, 0.035, 0.04);
       const sill = new THREE.Mesh(sillGeo, holoRibbonMat);
@@ -412,9 +620,6 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
       carRoot.add(sill);
     });
 
-    // ========================================================================
-    // 4 WHEELS WITH ALLOY RIMS, VENTILATED BRAKE DISCS & CALIPERS
-    // ========================================================================
     const tireMat = new THREE.MeshStandardMaterial({
       color: 0x161b22,
       roughness: 0.65,
@@ -468,7 +673,6 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
       wheelsList.push(wheelGroup);
     });
 
-    // Axle shafts connecting left & right wheels
     [WB / 2, -WB / 2].forEach((axX) => {
       const axleGeo = new THREE.CylinderGeometry(0.028, 0.028, W * 0.88, 16);
       axleGeo.rotateX(Math.PI / 2);
@@ -480,9 +684,6 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
       carRoot.add(axle);
     });
 
-    // ========================================================================
-    // HIGH-VOLTAGE SKATEBOARD BATTERY PACK, CELL MODULES & ELECTRIC MOTORS
-    // ========================================================================
     if (car.fuel === 'bev' || car.fuel === 'phev') {
       const packLen = car.fuel === 'bev' ? WB * 0.78 : WB * 0.42;
       const packW = W * 0.68;
@@ -566,7 +767,6 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
       carRoot.add(exhaustPipe);
     }
 
-    // Energy Flow Particles inside X-Ray
     const pCount = 75;
     const pPositions = new Float32Array(pCount * 3);
     for (let i = 0; i < pCount; i++) {
@@ -585,7 +785,6 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
     const energyParticles = new THREE.Points(pGeo, pMat);
     carRoot.add(energyParticles);
 
-    // 3D Floor Dimension Lines
     const dimsGroup = new THREE.Group();
     dimsGroup.visible = showDims;
     const lineMat = new THREE.LineBasicMaterial({
@@ -677,8 +876,42 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
     }
   }, [showDims, autoRotate]);
 
+  // Unified Camera Angle Preset handler (works for BOTH Sketchfab 3D CAD and Three.js X-Ray)
   const applyCameraPreset = (preset: CameraPreset) => {
     setCamPreset(preset);
+    if (!xray) {
+      const api = sfApiRef.current;
+      const initCam = sfInitialCamRef.current;
+      if (api && initCam && typeof api.setCameraLookAt === 'function') {
+        const [tx, ty, tz] = initCam.target;
+        const [px, py, pz] = initCam.position;
+        const dx = px - tx;
+        const dy = py - ty;
+        const dz = pz - tz;
+        const horizR = Math.max(0.1, Math.hypot(dx, dy));
+        const baseAngle = Math.atan2(dy, dx);
+
+        let newPos: [number, number, number] = [px, py, pz];
+        if (preset === 'front34') {
+          newPos = [px, py, pz];
+        } else if (preset === 'side') {
+          const ang = baseAngle + Math.PI * 0.28;
+          newPos = [tx + Math.cos(ang) * horizR * 1.04, ty + Math.sin(ang) * horizR * 1.04, tz + dz * 0.65];
+        } else if (preset === 'rear34') {
+          const ang = baseAngle + Math.PI * 0.82;
+          newPos = [tx + Math.cos(ang) * horizR, ty + Math.sin(ang) * horizR, tz + dz];
+        } else if (preset === 'top') {
+          newPos = [
+            tx + Math.cos(baseAngle) * horizR * 0.28,
+            ty + Math.sin(baseAngle) * horizR * 0.28,
+            tz + horizR * 1.25,
+          ];
+        }
+        api.setCameraLookAt(newPos, initCam.target, 0.7);
+      }
+      return;
+    }
+
     const cam = sceneRefs.current.camera;
     const ctrl = sceneRefs.current.controls;
     if (!cam || !ctrl) return;
@@ -694,6 +927,13 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
       cam.position.set(0.1, 6.0, 0.8);
     }
     ctrl.update();
+  };
+
+  const handleSelectPaint = (id: string) => {
+    setPaintId(id);
+    if (id !== 'factory') {
+      applyCadPaint(id);
+    }
   };
 
   const toggleFullscreen = () => {
@@ -712,8 +952,6 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
     return () => document.removeEventListener('fullscreenchange', onFsChange);
   }, []);
 
-  const sketchfabEmbedUrl = `https://sketchfab.com/models/${cadModel.uid}/embed?autostart=1&preload=1&ui_theme=dark&dnt=1&autospin=0.12&ui_infos=0&ui_watermark=0&ui_stop=0`;
-
   return (
     <div
       ref={containerRef}
@@ -722,17 +960,25 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
         width: '100%',
         aspectRatio: isFullscreen ? undefined : '16/10',
         height: isFullscreen ? '100vh' : undefined,
-        minHeight: 350,
+        minHeight: 370,
         borderRadius: isFullscreen ? 0 : pal.id === 'fintech' ? 14 : 10,
         overflow: 'hidden',
-        background: '#0B1017',
+        background: '#0E131B',
         border: `1px solid ${pal.line}`,
         userSelect: 'none',
       }}
     >
-      {/* MODE 1: REAL HIGH-POLYGON 3D CAD MODEL VIEWER (DEFAULT) */}
+      {/* MODE 1: REAL HIGH-POLYGON 3D CAD MODEL VIEWER (WITH SKETCHFAB CHROME CROPPED OUT) */}
       {!xray && (
-        <div style={{ position: 'relative', width: '100%', height: '100%', minHeight: 350 }}>
+        <div
+          style={{
+            position: 'relative',
+            width: '100%',
+            height: '100%',
+            minHeight: 370,
+            overflow: 'hidden',
+          }}
+        >
           {!cadLoaded && (
             <div
               style={{
@@ -745,7 +991,7 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
                 gap: 10,
                 background: 'radial-gradient(circle at 50% 50%, #172130 0%, #0B1017 100%)',
                 color: '#F2F0EB',
-                zIndex: 2,
+                zIndex: 3,
                 pointerEvents: 'none',
               }}
             >
@@ -759,24 +1005,27 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
                 }}
               >
                 {lang === 'sv'
-                  ? `Laddar högupplöst 3D-CAD (${cadModel.polygons.toLocaleString('de-AT')} polygoner)…`
-                  : `Lade hochauflösendes 3D-CAD (${cadModel.polygons.toLocaleString('de-AT')} Polygone)…`}
+                  ? `Laddar 3D-Showroom (${cadModel.polygons.toLocaleString('de-AT')} polygoner)…`
+                  : `Lade 3D-Showroom (${cadModel.polygons.toLocaleString('de-AT')} Polygone)…`}
               </div>
               <div style={{ fontSize: 11, opacity: 0.72 }}>
                 {car.brand} {car.model} · 360° WebGL Studio
               </div>
             </div>
           )}
+
+          {/* Vertical crop (-54px top, +104px height) completely hides third-party header/footer chrome */}
           <iframe
             key={cadModel.uid}
+            ref={cadIframeRef}
             title={`${car.brand} ${car.model} 3D CAD`}
-            src={sketchfabEmbedUrl}
-            onLoad={() => setCadLoaded(true)}
             allow="autoplay; fullscreen; xr-spatial-tracking"
             style={{
+              position: 'absolute',
+              top: -54,
+              left: 0,
               width: '100%',
-              height: '100%',
-              minHeight: 350,
+              height: 'calc(100% + 104px)',
               border: 'none',
               display: 'block',
             }}
@@ -791,256 +1040,256 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
           style={{
             width: '100%',
             height: '100%',
-            minHeight: 350,
+            minHeight: 370,
             cursor: 'grab',
           }}
         />
       )}
 
-      {/* TOP-LEFT HUD: 3D Mode Badge + Polygon Count + Physical Dimensions */}
+      {/* UNIFIED NON-OVERLAPPING TOP HUD BAR */}
       <div
         style={{
           position: 'absolute',
           top: 10,
           left: 10,
+          right: 10,
           display: 'flex',
-          flexDirection: 'column',
-          gap: 5,
-          pointerEvents: 'none',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          gap: 8,
+          flexWrap: 'wrap',
           zIndex: 5,
-          maxWidth: '72%',
+          pointerEvents: 'none',
         }}
       >
-        <div
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 6,
-            padding: '4px 10px',
-            borderRadius: pal.radiusBadge,
-            background: 'rgba(11, 16, 23, 0.84)',
-            backdropFilter: 'blur(8px)',
-            color: '#FFFFFF',
-            fontSize: 10.5,
-            fontWeight: 700,
-            letterSpacing: '0.03em',
-            border: '1px solid rgba(255,255,255,0.14)',
-          }}
-        >
-          <span
+        {/* Left column: Status pill + optional Dimensions/X-Ray chips */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 5, maxWidth: '100%' }}>
+          <div
             style={{
-              width: 7,
-              height: 7,
-              borderRadius: 99,
-              background: xray ? '#38BDF8' : '#10B981',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '4.5px 10px',
+              borderRadius: pal.radiusBadge,
+              background: 'rgba(11, 16, 23, 0.86)',
+              backdropFilter: 'blur(8px)',
+              color: '#FFFFFF',
+              fontSize: 10.5,
+              fontWeight: 700,
+              letterSpacing: '0.03em',
+              border: '1px solid rgba(255,255,255,0.14)',
+              width: 'fit-content',
             }}
-          />
-          <span>
-            {xray
-              ? lang === 'sv'
-                ? '3D RÖNTGEN · HOLOGRAFISKT CHASSI, BATTERI & DRIVLINA'
-                : '3D-RÖNTGEN · HOLOGRAMM-CHASSIS, BATTERIE & ANTRIEB'
-              : lang === 'sv'
-                ? `RIKTIG 3D-CAD · ${cadModel.polygons.toLocaleString('de-AT')} POLYGONER (DRA FÖR ATT ROTERA)`
-                : `ECHTES 3D-CAD · ${cadModel.polygons.toLocaleString('de-AT')} POLYGONE (ZIEHEN ZUM DREHEN)`}
-          </span>
+          >
+            <span
+              style={{
+                width: 7,
+                height: 7,
+                borderRadius: 99,
+                background: xray ? '#38BDF8' : '#10B981',
+                flexShrink: 0,
+              }}
+            />
+            <span>
+              {xray
+                ? lang === 'sv'
+                  ? '3D RÖNTGEN · CHASSI & DRIVLINA'
+                  : '3D-RÖNTGEN · CHASSIS & ANTRIEB'
+                : lang === 'sv'
+                  ? `3D-SHOWROOM · ${cadModel.polygons.toLocaleString('de-AT')} POLYGONER`
+                  : `3D-SHOWROOM · ${cadModel.polygons.toLocaleString('de-AT')} POLYGONE`}
+            </span>
+          </div>
+
+          {showDims && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+              {[
+                `${lang === 'sv' ? 'Längd' : 'Länge'}: ${dims.lengthMm.toLocaleString('de-AT')} mm`,
+                `${lang === 'sv' ? 'Bredd' : 'Breite'}: ${dims.widthMm.toLocaleString('de-AT')} mm`,
+                `${lang === 'sv' ? 'Hjulbas' : 'Radstand'}: ${dims.wheelbaseMm.toLocaleString('de-AT')} mm`,
+                `${lang === 'sv' ? 'Bagage' : 'Kofferraum'}: ${dims.trunkLiters} L`,
+              ].map((dChip) => (
+                <span
+                  key={dChip}
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 600,
+                    padding: '2.5px 7px',
+                    borderRadius: 5,
+                    background: 'rgba(11, 16, 23, 0.82)',
+                    color: '#F2F0EB',
+                    fontVariantNumeric: 'tabular-nums',
+                    border: '1px solid rgba(255,255,255,0.12)',
+                  }}
+                >
+                  {dChip}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {xray && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+              {[
+                dims.voltage,
+                dims.drivetrain,
+                dims.batteryKwhNet > 0
+                  ? `${dims.batteryKwhNet} kWh netto`
+                  : `${car.l.toLocaleString('de-AT')} l/100km`,
+                `Peak ${car.kw} kW / P.2 ${car.cont} kW`,
+                `G: ${car.mass} kg`,
+              ].map((chip) => (
+                <span
+                  key={chip}
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    padding: '2.5px 7px',
+                    borderRadius: 5,
+                    background: 'rgba(2, 132, 199, 0.88)',
+                    color: '#FFFFFF',
+                  }}
+                >
+                  {chip}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
-        {showDims && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-            {[
-              `${lang === 'sv' ? 'Längd' : 'Länge'}: ${dims.lengthMm.toLocaleString('de-AT')} mm`,
-              `${lang === 'sv' ? 'Bredd' : 'Breite'}: ${dims.widthMm.toLocaleString('de-AT')} mm`,
-              `${lang === 'sv' ? 'Hjulbas' : 'Radstand'}: ${dims.wheelbaseMm.toLocaleString('de-AT')} mm`,
-              `${lang === 'sv' ? 'Bagage' : 'Kofferraum'}: ${dims.trunkLiters} L`,
-            ].map((dChip) => (
-              <span
-                key={dChip}
-                style={{
-                  fontSize: 10,
-                  fontWeight: 600,
-                  padding: '2.5px 7px',
-                  borderRadius: 5,
-                  background: 'rgba(11, 16, 23, 0.78)',
-                  color: '#F2F0EB',
-                  fontVariantNumeric: 'tabular-nums',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                }}
-              >
-                {dChip}
-              </span>
-            ))}
-          </div>
-        )}
+        {/* Right column: Mode Switcher + Dimensions Toggle + Fullscreen */}
+        <div
+          style={{
+            display: 'flex',
+            gap: 5,
+            flexWrap: 'wrap',
+            pointerEvents: 'auto',
+          }}
+        >
+          <button
+            type="button"
+            onClick={() => setXray(false)}
+            style={{
+              padding: '5px 10px',
+              borderRadius: 6,
+              border: !xray ? '1px solid #10B981' : '1px solid rgba(255,255,255,0.18)',
+              cursor: 'pointer',
+              fontSize: 11,
+              fontWeight: 700,
+              background: !xray ? '#0E7C5A' : 'rgba(11, 16, 23, 0.84)',
+              color: '#FFFFFF',
+              backdropFilter: 'blur(6px)',
+            }}
+          >
+            🧊 {lang === 'sv' ? '3D-Modell (CAD)' : '3D-Modell (CAD)'}
+          </button>
 
-        {xray && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-            {[
-              dims.voltage,
-              dims.drivetrain,
-              dims.batteryKwhNet > 0
-                ? `${dims.batteryKwhNet} kWh netto`
-                : `${car.l.toLocaleString('de-AT')} l/100km`,
-              `Peak ${car.kw} kW / P.2 ${car.cont} kW`,
-              `G: ${car.mass} kg`,
-            ].map((chip) => (
-              <span
-                key={chip}
-                style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  padding: '2.5px 7px',
-                  borderRadius: 5,
-                  background: 'rgba(2, 132, 199, 0.88)',
-                  color: '#FFFFFF',
-                }}
-              >
-                {chip}
-              </span>
-            ))}
-          </div>
-        )}
+          <button
+            type="button"
+            onClick={() => setXray(true)}
+            style={{
+              padding: '5px 10px',
+              borderRadius: 6,
+              border: xray ? '1px solid #38BDF8' : '1px solid rgba(255,255,255,0.18)',
+              cursor: 'pointer',
+              fontSize: 11,
+              fontWeight: 700,
+              background: xray ? '#0284C7' : 'rgba(11, 16, 23, 0.84)',
+              color: '#FFFFFF',
+              backdropFilter: 'blur(6px)',
+            }}
+          >
+            ⚡ {lang === 'sv' ? '3D Röntgen' : '3D-Röntgen'}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setShowDims((v) => !v)}
+            title={lang === 'sv' ? 'Visa/dölj mått' : 'Maße ein-/ausblenden'}
+            style={{
+              padding: '5px 8px',
+              borderRadius: 6,
+              border: '1px solid rgba(255,255,255,0.18)',
+              cursor: 'pointer',
+              fontSize: 11,
+              fontWeight: 600,
+              background: showDims ? '#0E7C5A' : 'rgba(11, 16, 23, 0.84)',
+              color: '#FFFFFF',
+            }}
+          >
+            📏 {lang === 'sv' ? 'Mått' : 'Maße'}
+          </button>
+
+          <button
+            type="button"
+            onClick={toggleFullscreen}
+            title={lang === 'sv' ? 'Helskärm' : 'Vollbild'}
+            style={{
+              padding: '5px 8px',
+              borderRadius: 6,
+              border: '1px solid rgba(255,255,255,0.18)',
+              cursor: 'pointer',
+              fontSize: 11,
+              fontWeight: 700,
+              background: 'rgba(11, 16, 23, 0.84)',
+              color: '#FFFFFF',
+            }}
+          >
+            ⛶
+          </button>
+        </div>
       </div>
 
-      {/* TOP-RIGHT HUD: Mode Switcher + Camera Presets (in X-Ray) + Fullscreen */}
+      {/* BOTTOM CONTROL BAR: Live Paint Customizer (in CAD mode) + Camera Angle Presets */}
       <div
         style={{
           position: 'absolute',
-          top: 10,
+          bottom: 10,
+          left: 10,
           right: 10,
           display: 'flex',
-          gap: 5,
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 8,
           flexWrap: 'wrap',
+          padding: '7px 12px',
+          borderRadius: 9,
+          background: 'rgba(11, 16, 23, 0.86)',
+          backdropFilter: 'blur(10px)',
+          color: '#FFFFFF',
+          border: '1px solid rgba(255, 255, 255, 0.14)',
           zIndex: 5,
         }}
       >
-        <button
-          type="button"
-          onClick={() => setXray(false)}
-          style={{
-            padding: '5px 10px',
-            borderRadius: 6,
-            border: !xray ? '1px solid #10B981' : '1px solid rgba(255,255,255,0.18)',
-            cursor: 'pointer',
-            fontSize: 11,
-            fontWeight: 700,
-            background: !xray ? '#0E7C5A' : 'rgba(11, 16, 23, 0.82)',
-            color: '#FFFFFF',
-            backdropFilter: 'blur(6px)',
-          }}
-        >
-          🧊 {lang === 'sv' ? '3D-Modell (CAD)' : '3D-Modell (CAD)'}
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setXray(true)}
-          style={{
-            padding: '5px 10px',
-            borderRadius: 6,
-            border: xray ? '1px solid #38BDF8' : '1px solid rgba(255,255,255,0.18)',
-            cursor: 'pointer',
-            fontSize: 11,
-            fontWeight: 700,
-            background: xray ? '#0284C7' : 'rgba(11, 16, 23, 0.82)',
-            color: '#FFFFFF',
-            backdropFilter: 'blur(6px)',
-          }}
-        >
-          ⚡ {lang === 'sv' ? '3D Röntgen' : '3D-Röntgen'}
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setShowDims((v) => !v)}
-          title={lang === 'sv' ? 'Visa/dölj mått' : 'Maße ein-/ausblenden'}
-          style={{
-            padding: '5px 8px',
-            borderRadius: 6,
-            border: '1px solid rgba(255,255,255,0.18)',
-            cursor: 'pointer',
-            fontSize: 11,
-            fontWeight: 600,
-            background: showDims ? 'rgba(15, 26, 23, 0.9)' : 'rgba(11, 16, 23, 0.65)',
-            color: '#FFFFFF',
-          }}
-        >
-          📏 {lang === 'sv' ? 'Mått' : 'Maße'}
-        </button>
-
-        <button
-          type="button"
-          onClick={toggleFullscreen}
-          title={lang === 'sv' ? 'Helskärm' : 'Vollbild'}
-          style={{
-            padding: '5px 8px',
-            borderRadius: 6,
-            border: '1px solid rgba(255,255,255,0.18)',
-            cursor: 'pointer',
-            fontSize: 11,
-            fontWeight: 700,
-            background: 'rgba(11, 16, 23, 0.82)',
-            color: '#FFFFFF',
-          }}
-        >
-          ⛶
-        </button>
-      </div>
-
-      {/* BOTTOM HUD (Only shown in X-Ray mode for camera angles & auto-rotate) */}
-      {xray && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 10,
-            left: 10,
-            right: 10,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            gap: 8,
-            flexWrap: 'wrap',
-            padding: '7px 12px',
-            borderRadius: 9,
-            background: 'rgba(11, 16, 23, 0.84)',
-            backdropFilter: 'blur(10px)',
-            color: '#FFFFFF',
-            border: '1px solid rgba(56, 189, 248, 0.25)',
-            zIndex: 5,
-          }}
-        >
+        {/* Left side: Live PBR Metallic Paint Swatches (in 3D-CAD mode) or X-Ray status */}
+        {!xray ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
-            {(
-              [
-                ['front34', lang === 'sv' ? '3/4 Fram' : '3/4 Front'],
-                ['side', lang === 'sv' ? 'Sida' : 'Seite'],
-                ['rear34', lang === 'sv' ? '3/4 Bak' : '3/4 Heck'],
-                ['top', lang === 'sv' ? 'Uppifrån' : 'Draufsicht'],
-              ] as Array<[CameraPreset, string]>
-            ).map(([pKey, pLabel]) => (
-              <button
-                key={pKey}
-                type="button"
-                onClick={() => applyCameraPreset(pKey)}
-                style={{
-                  padding: '4px 8px',
-                  borderRadius: 5,
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: 10.5,
-                  fontWeight: 700,
-                  background:
-                    camPreset === pKey && !autoRotate
-                      ? '#0284C7'
-                      : 'rgba(255, 255, 255, 0.12)',
-                  color: '#FFFFFF',
-                }}
-              >
-                {pLabel}
-              </button>
-            ))}
+            <span style={{ fontSize: 10.5, fontWeight: 600, opacity: 0.82, marginRight: 2 }}>
+              {lang === 'sv' ? 'Lack:' : 'Lack:'}
+            </span>
+            {PAINT_PRESETS.map((p) => {
+              const on = p.id === paintId;
+              return (
+                <button
+                  key={p.id}
+                  type="button"
+                  title={lang === 'sv' ? p.nameSv : p.nameDe}
+                  onClick={() => handleSelectPaint(p.id)}
+                  style={{
+                    width: 18,
+                    height: 18,
+                    borderRadius: 99,
+                    background: p.hex,
+                    border: on ? '2px solid #FFFFFF' : '1.5px solid rgba(255,255,255,0.35)',
+                    boxShadow: on ? '0 0 0 2px #10B981' : 'none',
+                    cursor: 'pointer',
+                    padding: 0,
+                  }}
+                />
+              );
+            })}
           </div>
-
+        ) : (
           <button
             type="button"
             onClick={() => setAutoRotate((v) => !v)}
@@ -1057,8 +1306,41 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
           >
             ↻ {lang === 'sv' ? '360° Rotation' : '360° Drehung'}
           </button>
+        )}
+
+        {/* Right side: Camera Angle Presets (works in BOTH 3D-CAD and 3D X-Ray) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+          {(
+            [
+              ['front34', lang === 'sv' ? '3/4 Fram' : '3/4 Front'],
+              ['side', lang === 'sv' ? 'Sida' : 'Seite'],
+              ['rear34', lang === 'sv' ? '3/4 Bak' : '3/4 Heck'],
+              ['top', lang === 'sv' ? 'Tak' : 'Dach'],
+            ] as Array<[CameraPreset, string]>
+          ).map(([pKey, pLabel]) => (
+            <button
+              key={pKey}
+              type="button"
+              onClick={() => applyCameraPreset(pKey)}
+              style={{
+                padding: '4px 8px',
+                borderRadius: 5,
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: 10.5,
+                fontWeight: 700,
+                background:
+                  camPreset === pKey
+                    ? '#0E7C5A'
+                    : 'rgba(255, 255, 255, 0.12)',
+                color: '#FFFFFF',
+              }}
+            >
+              {pLabel}
+            </button>
+          ))}
         </div>
-      )}
+      </div>
     </div>
   );
 };
