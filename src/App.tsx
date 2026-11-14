@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { flushSync } from 'react-dom';
 import { Language } from './types';
+import { Car3DStudio } from './components/Car3DStudio';
 import {
   CountryCode,
   SituationId,
@@ -110,6 +111,7 @@ export const App: React.FC = () => {
   // Detail & Compare state
   const [detailId, setDetailId] = useState<string>('id7');
   const [detailForm, setDetailForm] = useState<FahrwertFormKey | null>(null);
+  const [detailMediaMode, setDetailMediaMode] = useState<'photo' | '3d' | 'xray'>('photo');
   const [compareIds, setCompareIds] = useState<string[]>(['enyaq', 'id7', 'ioniq5']);
   const [overridesMap, setOverridesMap] = useState<Record<string, CarOverrides>>({});
   const [leadSentFor, setLeadSentFor] = useState<Record<string, boolean>>({});
@@ -304,10 +306,15 @@ export const App: React.FC = () => {
     });
   };
 
-  const openDetail = (id: string, formKey?: FahrwertFormKey) => {
+  const openDetail = (
+    id: string,
+    formKey?: FahrwertFormKey,
+    mediaMode: 'photo' | '3d' | 'xray' = 'photo'
+  ) => {
     navigateWithTransition(() => {
       setDetailId(id);
       setDetailForm(formKey || null);
+      setDetailMediaMode(mediaMode);
       setScreen('detail');
     });
   };
@@ -478,6 +485,28 @@ export const App: React.FC = () => {
             >
               VW ID.7 Tourer Pro S →
             </div>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                openDetail('id7', undefined, '3d');
+              }}
+              style={{
+                position: 'absolute',
+                bottom: 12,
+                right: 14,
+                background: 'rgba(15, 26, 23, 0.85)',
+                color: '#FFFFFF',
+                border: 'none',
+                fontSize: 11.5,
+                fontWeight: 700,
+                padding: '6px 11px',
+                borderRadius: PAL.radiusBadge,
+                cursor: 'pointer',
+              }}
+            >
+              🧊 360° 3D-vy
+            </button>
           </div>
         </section>
 
@@ -868,6 +897,7 @@ export const App: React.FC = () => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
+                    position: 'relative',
                   }}
                 >
                   <img
@@ -882,6 +912,28 @@ export const App: React.FC = () => {
                       mixBlendMode: 'multiply',
                     }}
                   />
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openDetail(car.id, undefined, '3d');
+                    }}
+                    style={{
+                      position: 'absolute',
+                      bottom: 10,
+                      right: 12,
+                      background: 'rgba(15, 26, 23, 0.85)',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      fontSize: 11,
+                      fontWeight: 700,
+                      padding: '4px 9px',
+                      borderRadius: PAL.radiusBadge,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    🧊 3D-vy
+                  </button>
                 </div>
                 <div style={{ padding: 20 }}>
                   <div style={{ fontSize: 12, color: PAL.muted, fontWeight: 500 }}>{car.brand}</div>
@@ -1403,6 +1455,28 @@ export const App: React.FC = () => {
                       >
                         {FUEL_LABELS[lang][car.fuel]}
                       </span>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openDetail(car.id, undefined, '3d');
+                        }}
+                        style={{
+                          position: 'absolute',
+                          bottom: 10,
+                          right: 12,
+                          background: 'rgba(15, 26, 23, 0.85)',
+                          color: '#FFFFFF',
+                          border: 'none',
+                          fontSize: 11,
+                          fontWeight: 700,
+                          padding: '4px 9px',
+                          borderRadius: PAL.radiusBadge,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        🧊 3D-vy
+                      </button>
                     </div>
 
                     <div
@@ -1757,29 +1831,101 @@ export const App: React.FC = () => {
             marginBottom: 24,
           }}
         >
-          <div
-            style={{
-              aspectRatio: '16/10',
-              background: PAL.stageBg,
-              borderRadius: direction === 'fintech' ? 14 : 10,
-              padding: 20,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <img
-              src={`cars/${car.img}?v=studio2`}
-              alt={`${car.brand} ${car.model}`}
-              fetchPriority="high"
-              decoding="async"
+          <div>
+            {/* Media Mode Switcher: Photo vs 360° 3D Studio vs X-Ray */}
+            <div
               style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'contain',
-                mixBlendMode: 'multiply',
+                display: 'inline-flex',
+                gap: 4,
+                padding: 3,
+                marginBottom: 10,
+                borderRadius: PAL.radiusBadge,
+                background: PAL.inputBg,
+                border: `1px solid ${PAL.line}`,
               }}
-            />
+            >
+              {(
+                [
+                  ['photo', lang === 'sv' ? '📷 Studiofoto' : '📷 Studiofoto'],
+                  ['3d', lang === 'sv' ? '🧊 360° 3D-Studio' : '🧊 360° 3D-Studio'],
+                  ['xray', lang === 'sv' ? '⚡ 3D Röntgen (Batteri)' : '⚡ 3D-Röntgen (Antrieb)'],
+                ] as Array<['photo' | '3d' | 'xray', string]>
+              ).map(([mKey, mLabel]) => (
+                <button
+                  key={mKey}
+                  type="button"
+                  onClick={() => setDetailMediaMode(mKey)}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: PAL.radiusBadge,
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    background: detailMediaMode === mKey ? PAL.selBg : 'transparent',
+                    color: detailMediaMode === mKey ? PAL.selFg : PAL.subInk,
+                  }}
+                >
+                  {mLabel}
+                </button>
+              ))}
+            </div>
+
+            {detailMediaMode === 'photo' ? (
+              <div
+                style={{
+                  aspectRatio: '16/10',
+                  background: PAL.stageBg,
+                  borderRadius: direction === 'fintech' ? 14 : 10,
+                  padding: 20,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  position: 'relative',
+                }}
+              >
+                <img
+                  src={`cars/${car.img}?v=studio2`}
+                  alt={`${car.brand} ${car.model}`}
+                  fetchPriority="high"
+                  decoding="async"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'contain',
+                    mixBlendMode: 'multiply',
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setDetailMediaMode('3d')}
+                  style={{
+                    position: 'absolute',
+                    bottom: 14,
+                    right: 14,
+                    padding: '8px 14px',
+                    borderRadius: PAL.radiusBadge,
+                    border: 'none',
+                    background: PAL.selBg,
+                    color: PAL.selFg,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    boxShadow: '0 6px 18px rgba(0,0,0,0.18)',
+                  }}
+                >
+                  {lang === 'sv' ? '🧊 Starta 360° 3D-vy →' : '🧊 360° 3D-Ansicht starten →'}
+                </button>
+              </div>
+            ) : (
+              <Car3DStudio
+                key={`${car.id}-${detailMediaMode}`}
+                car={car}
+                pal={PAL}
+                lang={lang}
+                initialXray={detailMediaMode === 'xray'}
+              />
+            )}
           </div>
 
           <div>
