@@ -37,6 +37,184 @@ export interface FahrwertCar {
   offer?: PartnerOffer;
 }
 
+export type InteriorPackageId = 'anthracite' | 'nappa-black' | 'cognac' | 'nordic-beige';
+export type SpecialOptionId =
+  | 'aero20'
+  | 'winter'
+  | 'heatpump'
+  | 'hud_matrix'
+  | 'pano'
+  | 'pilot'
+  | 'towbar'
+  | 'audio'
+  | 'wallbox';
+
+export interface InteriorPackageDef {
+  id: InteriorPackageId;
+  nameDe: string;
+  nameSv: string;
+  descDe: string;
+  descSv: string;
+  priceEur: number;
+  seatHex: string;
+  trimHex: string;
+  ambientHex: string;
+}
+
+export interface SpecialOptionDef {
+  id: SpecialOptionId;
+  category: 'wheels' | 'tech' | 'comfort' | 'charging';
+  icon: string;
+  nameDe: string;
+  nameSv: string;
+  descDe: string;
+  descSv: string;
+  priceEur: number;
+  bevOnly?: boolean;
+}
+
+export const INTERIOR_PACKAGES: InteriorPackageDef[] = [
+  {
+    id: 'anthracite',
+    nameDe: 'Serie · Anthrazit Stoff / Microfleece',
+    nameSv: 'Standard · Antracit Tyg / Alcantara',
+    descDe: 'Ergonomische Komfortsitze in Anthrazit, Dekoreinlagen Dark Brushed Aluminium, Sitzheizung vorn.',
+    descSv: 'Ergonomiska komfortstolar i antracit, dekorpaneler i mörkt borstat aluminium, stolsvärme fram.',
+    priceEur: 0,
+    seatHex: '#252930',
+    trimHex: '#3E4550',
+    ambientHex: '#38BDF8',
+  },
+  {
+    id: 'nappa-black',
+    nameDe: 'Nappaleder Schwarz (Perforiert & Memory)',
+    nameSv: 'Nappaläder Svart (Perforerat & El-minne)',
+    descDe: 'Feinnappa Schwarz mit Kontrastnaht, elektrische 14-Wege-Memory-Sitze, Carbon-/Pianolack-Dekor.',
+    descSv: 'Perforerat svart nappaläder med kontrastsöm, elstolar med minne (14-vägs), kolfiber-/pianolackdekor.',
+    priceEur: 1850,
+    seatHex: '#15171B',
+    trimHex: '#1E2229',
+    ambientHex: '#10B981',
+  },
+  {
+    id: 'cognac',
+    nameDe: 'Design-Leder Cognac / Tartufo & Edelholz',
+    nameSv: 'Designläder Cognac / Tartufo & Ädelträ',
+    descDe: 'Pflanzlich gegerbtes Leder in Cognac-Braun, offenporiges Walnussholz, beleuchtete Einstiegsleisten.',
+    descSv: 'Vegetabiliskt garvat läder i cognacsbrunt, öppet valnötsträ, belysta instegslister.',
+    priceEur: 2200,
+    seatHex: '#8B4A24',
+    trimHex: '#5A3822',
+    ambientHex: '#F59E0B',
+  },
+  {
+    id: 'nordic-beige',
+    nameDe: 'Nordic Lounge Hellbeige (Belüftung & Massage)',
+    nameSv: 'Nordic Lounge Ljusbeige (Ventilation & Massage)',
+    descDe: 'Klimatisierte Lounge-Sitze in Hellbeige mit pneumatischer 10-Punkt-Massage & hellem Eschenholz.',
+    descSv: 'Ventilerade loungestolar i ljusbeige med 10-punkts massagefunktion & ljust askträ.',
+    priceEur: 2550,
+    seatHex: '#D5CBBF',
+    trimHex: '#A69580',
+    ambientHex: '#60A5FA',
+  },
+];
+
+export const SPECIAL_OPTIONS: SpecialOptionDef[] = [
+  {
+    id: 'heatpump',
+    category: 'tech',
+    icon: '♨️',
+    nameDe: 'Effizienz-Wärmepumpe (Thermomanagement)',
+    nameSv: 'Värmepump & Batteriförvärmning',
+    descDe: 'Senkt den Winter-Stromverbrauch um ca. 6 % und erhöht die reale Winterreichweite.',
+    descSv: 'Sänker elförbrukningen på vintern med ca 6 % och ökar den verkliga vinterräckvidden.',
+    priceEur: 1150,
+    bevOnly: true,
+  },
+  {
+    id: 'winter',
+    category: 'wheels',
+    icon: '❄️',
+    nameDe: 'Original Winterkompletträder (Alu + Alpin-Reifen)',
+    nameSv: 'Kompletta Vinterhjul (Alufälg + friktions-/dubbdäck)',
+    descDe: '4× Leichtmetallräder inkl. Premium-Winterreifen & RDKS (reduziert laufende Reifenkosten).',
+    descSv: '4× original lättmetallfälgar med premium vinterdäck & TPMS (minskar löpande däckslitagepost).',
+    priceEur: 1680,
+  },
+  {
+    id: 'aero20',
+    category: 'wheels',
+    icon: '🛞',
+    nameDe: '20"/21" Aero-Performance Leichtmetallfelgen',
+    nameSv: '20"/21" Aero-Performance Lättmetallfälgar',
+    descDe: 'Glanzgedrehte Bi-Color Schmiede-/Aerofelgen inkl. adaptivem DCC-Fahrwerk.',
+    descSv: 'Diamantsvarvade Bi-Color aerofälgar inkl. adaptivt DCC-chassi.',
+    priceEur: 1190,
+  },
+  {
+    id: 'hud_matrix',
+    category: 'tech',
+    icon: '📽️',
+    nameDe: 'AR Head-Up Display & Matrix-LED Lichtpaket',
+    nameSv: 'AR Head-Up Display & Matrix-LED Strålkastare',
+    descDe: 'Augmented-Reality-Projektion in die Frontscheibe + blendfreies Matrix-Fernlicht.',
+    descSv: 'Augmented Reality-projicering i vindrutan + bländfritt adaptivt Matrix-helljus.',
+    priceEur: 1490,
+  },
+  {
+    id: 'pano',
+    category: 'comfort',
+    icon: '🌤️',
+    nameDe: 'Panorama-Glasdach & Akustikverglasung',
+    nameSv: 'Panoramaglastak & Akustikrutor',
+    descDe: 'Durchgehendes elektrochromes Sonnendach + geräuschdämmendes Verbundsicherheitsglas.',
+    descSv: 'Fullängds panoramaglastak med UV-skydd + ljudisolerande laminerade sidorutor.',
+    priceEur: 1290,
+  },
+  {
+    id: 'pilot',
+    category: 'tech',
+    icon: '🛡️',
+    nameDe: 'Fahrassistenz-Paket Pro & 360°-Kamera',
+    nameSv: 'Förarassistans Pro (Pilot/Travel Assist & 360°-kamera)',
+    descDe: ' teilautonomes Fahren auf der Autobahn, automatischer Spurwechsel, 3D-Area-View & Parkassistent.',
+    descSv: 'Aktiv styrassistans på motorväg, automatiskt filbyte, 360° 3D-kamera & fjärrstyrd parkering.',
+    priceEur: 1390,
+  },
+  {
+    id: 'towbar',
+    category: 'comfort',
+    icon: '🪝',
+    nameDe: 'Anhängerkupplung elektrisch schwenkbar (AHK)',
+    nameSv: 'Dragkrok elektriskt infällbar',
+    descDe: 'Auf Knopfdruck ausklappbar inkl. Gespannstabilisierung (ideal für Fahrradträger & Anhänger).',
+    descSv: 'Elektriskt utfällbar dragkrok med släpvagnsstabilisering.',
+    priceEur: 1050,
+  },
+  {
+    id: 'audio',
+    category: 'comfort',
+    icon: '🔊',
+    nameDe: 'High-End 3D-Soundsystem (Subwoofer & Dolby Atmos)',
+    nameSv: 'High-End Ljudsystem (Harman Kardon / B&W / Canton)',
+    descDe: '12–16 Lautsprecher, Center-Speaker im Armaturenbrett & aktiver Kofferraum-Subwoofer.',
+    descSv: '12–16 högtalare, centerhögtalare i instrumentpanelen & aktiv subwoofer.',
+    priceEur: 990,
+  },
+  {
+    id: 'wallbox',
+    category: 'charging',
+    icon: '🔌',
+    nameDe: 'Heim-Wallbox 11 kW inkl. Montage (§ 4c Sachbezug-VO)',
+    nameSv: 'Hemmaladdare / Wallbox 11 kW inkl. installation',
+    descDe: 'In AT bis 2.000 € steuerfrei (0 € Sachbezug) und außerhalb der 40.000 € PKW-Luxustangente absetzbar.',
+    descSv: 'I Österrike skattefri upp till 2 000 € (§ 4c) och avdragsgill utanför 40 000 €-taket.',
+    priceEur: 1490,
+    bevOnly: true,
+  },
+];
+
 export interface CarOverrides {
   disc?: number | null;
   res?: number | null;
@@ -44,6 +222,8 @@ export interface CarOverrides {
   lease?: number | null;
   leaseDown?: number | null;
   ins?: number | null;
+  interior?: InteriorPackageId;
+  options?: SpecialOptionId[];
 }
 
 export interface FahrwertLine {
@@ -71,6 +251,9 @@ export interface FahrwertCarCalc {
   dienstwagen: FahrwertScenarioResult;
   firma: FahrwertScenarioResult;
   meta: {
+    baseList: number;
+    optionsList: number;
+    wallboxPrice: number;
     list: number;
     P: number;
     rEst: number;
@@ -79,6 +262,8 @@ export interface FahrwertCarCalc {
     novaPct: number;
     vorsteuerBackMonthly: number;
     sachbezugMonthly: number;
+    effKwh: number;
+    effRange: number;
   };
 }
 
@@ -1510,10 +1695,35 @@ export function calcFahrwertCar(
   const km = s.km;
   const bizShare = Math.max(0.1, Math.min(1, (s.bizSharePct || 70) / 100));
   const marg = (s.marg ?? k.marg) / 100;
-  const list = c.price * k.pf;
+
+  // Interior & Special Equipment (Sonderausstattung)
+  const selectedInterior =
+    INTERIOR_PACKAGES.find((p) => p.id === (overrides.interior || 'anthracite')) ||
+    INTERIOR_PACKAGES[0];
+  const selectedOptIds: SpecialOptionId[] = overrides.options || [];
+  const selectedOpts = SPECIAL_OPTIONS.filter(
+    (o) => selectedOptIds.includes(o.id) && (!o.bevOnly || c.fuel === 'bev')
+  );
+
+  const hasHeatpump = selectedOpts.some((o) => o.id === 'heatpump');
+  const hasWinterWheels = selectedOpts.some((o) => o.id === 'winter');
+  const wallboxOpt = selectedOpts.find((o) => o.id === 'wallbox');
+  const wallboxPrice = wallboxOpt ? wallboxOpt.priceEur * k.pf : 0;
+
+  const vehOptionsEur =
+    selectedInterior.priceEur +
+    selectedOpts.filter((o) => o.id !== 'wallbox').reduce((sum, o) => sum + o.priceEur, 0);
+
+  const baseList = c.price * k.pf;
+  const optionsList = vehOptionsEur * k.pf;
+  const list = baseList + optionsList;
   const P = list * (1 - (overrides.disc || 0) / 100);
   const elec = overrides.elec != null ? overrides.elec : k.elec;
-  const en = (km / 12 / 100) * (c.kwh * elec + (c.l || 0) * k.petrol);
+
+  const effKwh = hasHeatpump && c.kwh > 0 ? Number((c.kwh * 0.94).toFixed(1)) : c.kwh;
+  const effRange = hasHeatpump && c.fuel === 'bev' ? Math.round(c.range * 1.06) : c.range;
+
+  const en = (km / 12 / 100) * (effKwh * elec + (c.l || 0) * k.petrol);
   const ins =
     overrides.ins != null ? overrides.ins : (k.insBase + P * k.insRate) / 12;
   const ist: ProvenanceStatus = overrides.ins != null ? 'user' : 'schaetzung';
@@ -1521,7 +1731,7 @@ export function calcFahrwertCar(
   const novaPct = calcNovaPercent(c, k);
   const maint =
     (c.fuel === 'bev' ? k.maintBev : k.maintIce) * Math.sqrt(km / 15000) +
-    k.tyres;
+    (hasWinterWheels ? 0 : k.tyres);
 
   let r =
     1 -
@@ -1534,13 +1744,13 @@ export function calcFahrwertCar(
     r = overrides.res / 100;
   }
 
-  const dep = (P * (1 - r)) / n;
+  const dep = (P * (1 - r) + wallboxPrice) / n;
   const dSpan = (P * 0.06) / n;
   const cap = (((P * (1 + r)) / 2) * k.alt) / 12;
 
   const enNote =
-    c.kwh > 0
-      ? `${c.kwh.toLocaleString('de-AT')} kWh/100 km · ${elec.toLocaleString('de-AT')} ${
+    effKwh > 0
+      ? `${effKwh.toLocaleString('de-AT')} kWh/100 km${hasHeatpump ? (lang === 'sv' ? ' (inkl. värmepump −6 %)' : ' (inkl. Wärmepumpe −6 %)') : ''} · ${elec.toLocaleString('de-AT')} ${
           k.cur === 'EUR' ? '€' : 'kr'
         }/kWh`
       : `${c.l.toLocaleString('de-AT')} l/100 km`;
@@ -1559,6 +1769,8 @@ export function calcFahrwertCar(
     info,
   });
 
+  const equipTotalLocal = optionsList + wallboxPrice;
+
   // 1. Barkauf / Kontantköp
   const kauf: FahrwertScenarioResult = {
     key: 'kauf',
@@ -1567,10 +1779,10 @@ export function calcFahrwertCar(
       ln(
         lang === 'sv' ? 'Värdeminskning' : 'Wertverlust',
         dep,
-        overrides.res != null ? 'user' : 'schaetzung',
+        overrides.res != null || equipTotalLocal > 0 ? 'user' : 'schaetzung',
         lang === 'sv'
-          ? `Restvärde ${Math.round(r * 100)} % efter ${n} månader`
-          : `Restwert ${Math.round(r * 100)} % nach ${n} Monaten`
+          ? `Restvärde ${Math.round(r * 100)} % efter ${n} månader${equipTotalLocal > 0 ? ` · inkl. ${fmtCurrency(equipTotalLocal, k)} tillval` : ''}`
+          : `Restwert ${Math.round(r * 100)} % nach ${n} Monaten${equipTotalLocal > 0 ? ` · inkl. ${fmtCurrency(equipTotalLocal, k)} Ausstattung` : ''}`
       ),
       ln(
         lang === 'sv' ? 'Kapitalkostnad' : 'Kapitalkosten',
@@ -1608,9 +1820,13 @@ export function calcFahrwertCar(
         lang === 'sv' ? 'Service & vinterdäck' : 'Service & Reifen',
         maint,
         'schaetzung',
-        lang === 'sv'
-          ? 'Serviceintervall & vinterhjul'
-          : 'Herstellerintervall, Winterreifen'
+        hasWinterWheels
+          ? lang === 'sv'
+            ? 'Serviceintervall (vinterhjul ingår i tillval)'
+            : 'Herstellerintervall (Winterräder in Ausstattung enthalten)'
+          : lang === 'sv'
+            ? 'Serviceintervall & vinterhjul'
+            : 'Herstellerintervall, Winterreifen'
       ),
     ],
     span: dSpan,
@@ -1627,21 +1843,25 @@ export function calcFahrwertCar(
   let lst: ProvenanceStatus;
   let svc = false;
 
+  const optLeaseAddon =
+    optionsList * k.lease * Math.pow(48 / n, 0.3) + wallboxPrice / n;
+
   if (overrides.lease) {
-    rate = overrides.lease;
+    rate = overrides.lease + optLeaseAddon;
     down = overrides.leaseDown || 0;
     lst = 'user';
   } else if (off) {
-    rate = off.rate * k.pf;
+    rate = off.rate * k.pf + optLeaseAddon;
     down = off.down * k.pf;
     lst = 'angebot';
     svc = off.service;
   } else {
     rate =
       P *
-      k.lease *
-      Math.pow(48 / n, 0.3) *
-      Math.pow(km / 15000, 0.35);
+        k.lease *
+        Math.pow(48 / n, 0.3) *
+        Math.pow(km / 15000, 0.35) +
+      wallboxPrice / n;
     down = P * 0.06;
     lst = 'schaetzung';
   }
@@ -1655,14 +1875,14 @@ export function calcFahrwertCar(
         rate,
         lst,
         lst === 'angebot' && off
-          ? `${off.lessor} · ${lang === 'sv' ? 'giltig t.o.m.' : 'gültig bis'} ${off.valid}`
+          ? `${off.lessor} · ${lang === 'sv' ? 'giltig t.o.m.' : 'gültig bis'} ${off.valid}${equipTotalLocal > 0 ? ` (+${fmtCurrency(optLeaseAddon, k)}/mån tillval)` : ''}`
           : lst === 'user'
             ? lang === 'sv'
               ? 'Från din offert'
               : 'Aus deinem Angebot'
             : lang === 'sv'
-              ? 'Modellerad från listpris'
-              : 'Modelliert aus Listenpreis'
+              ? 'Modellerad från listpris inkl. tillval'
+              : 'Modelliert aus Listenpreis inkl. Ausstattung'
       ),
       ln(
         lang === 'sv' ? 'Första förhöjd avgift (utslagen)' : 'Anzahlung anteilig',
@@ -1716,7 +1936,7 @@ export function calcFahrwertCar(
     hasOffer: false,
   };
 
-  // 3. Dienstwagen / Tjänstebil
+  // 3. Dienstwagen / Tjänstebil (Note: Wallbox up to 2.000 € is 0 € Sachbezug under § 4c)
   const ben = calcBenefitMonthly(c, k, list, s.commute);
   const dienstwagen: FahrwertScenarioResult = {
     key: 'dienstwagen',
@@ -1737,7 +1957,7 @@ export function calcFahrwertCar(
         'gesetz',
         `${Math.round(marg * 100)} % ${
           lang === 'sv' ? 'marginalskatt' : 'Grenzsteuersatz'
-        }`
+        }${equipTotalLocal > 0 ? ` (inkl. ${fmtCurrency(optionsList, k)} tillval)` : ''}`
       ),
       ln(
         lang === 'sv' ? 'Egenavgift / nettolöneavdrag' : 'Eigenanteil',
@@ -1760,16 +1980,25 @@ export function calcFahrwertCar(
   const capLimit = 40000 * k.pf;
   const luxFactor = k.code === 'AT' ? Math.min(1, capLimit / P) : 1;
 
-  // In Austria, 0 g/km BEVs also receive the 20 % Öko-Investitionsfreibetrag (Öko-IFB, § 10 EStG) on the capped acquisition base
+  // In Austria, 0 g/km BEVs also receive the 20 % Öko-Investitionsfreibetrag (Öko-IFB, § 10 EStG) on the capped acquisition base + Wallbox
   const oekoIfbMonthlyBase =
     k.code === 'AT' && c.fuel === 'bev'
-      ? (Math.min(P * (1 - (k.vat / (1 + k.vat)) * vShare), capLimit) * 0.2 * bizShare) / n
+      ? ((Math.min(P * (1 - (k.vat / (1 + k.vat)) * vShare), capLimit) + wallboxPrice) *
+          0.2 *
+          bizShare) /
+        n
       : 0;
   const oekoIfbTaxShield = oekoIfbMonthlyBase * marg;
 
-  // Deductible business expense tax shield (capped at 40.000 € Luxustangente on depreciation/finance)
+  // Deductible business expense tax shield (capped at 40.000 € Luxustangente on vehicle depreciation/finance, Wallbox 100% uncapped)
+  const vehDepOnly = (P * (1 - r)) / n;
+  const wallboxDepMonthly = wallboxPrice / n;
   const deductibleBase =
-    ((dep + cap + ins) * luxFactor + (en + tax + maint) - vatBack) * bizShare;
+    ((vehDepOnly + cap + ins) * luxFactor +
+      wallboxDepMonthly +
+      (en + tax + maint) -
+      vatBack) *
+    bizShare;
   const incomeTaxSave = deductibleBase * marg;
 
   const privTax =
@@ -1895,6 +2124,9 @@ export function calcFahrwertCar(
   return {
     ...scenarios,
     meta: {
+      baseList,
+      optionsList,
+      wallboxPrice,
       list,
       P,
       rEst,
@@ -1903,6 +2135,8 @@ export function calcFahrwertCar(
       novaPct,
       vorsteuerBackMonthly: vatBack,
       sachbezugMonthly: ben,
+      effKwh,
+      effRange,
     },
   };
 }

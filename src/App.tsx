@@ -12,6 +12,10 @@ import {
   FuelType,
   BodyCategory,
   CarOverrides,
+  InteriorPackageId,
+  SpecialOptionId,
+  INTERIOR_PACKAGES,
+  SPECIAL_OPTIONS,
   PALETTES,
   FAHRWERT_CARS,
   COUNTRIES,
@@ -111,7 +115,7 @@ export const App: React.FC = () => {
   // Detail & Compare state
   const [detailId, setDetailId] = useState<string>('id7');
   const [detailForm, setDetailForm] = useState<FahrwertFormKey | null>(null);
-  const [detailMediaMode, setDetailMediaMode] = useState<'photo' | '3d' | 'xray'>('photo');
+  const [detailMediaMode, setDetailMediaMode] = useState<'photo' | '3d' | 'interior' | 'xray'>('photo');
   const [compareIds, setCompareIds] = useState<string[]>(['enyaq', 'id7', 'ioniq5']);
   const [overridesMap, setOverridesMap] = useState<Record<string, CarOverrides>>({});
   const [leadSentFor, setLeadSentFor] = useState<Record<string, boolean>>({});
@@ -278,7 +282,11 @@ export const App: React.FC = () => {
       });
   }, [evaluatedCars, fuels, bodies, selectedBrand, searchQuery, minRange, maxPrice, onlyOffers, sortBy]);
 
-  const setCarOverride = (carId: string, key: keyof CarOverrides, val: number | null) => {
+  const setCarOverride = (
+    carId: string,
+    key: Exclude<keyof CarOverrides, 'interior' | 'options'>,
+    val: number | null
+  ) => {
     setOverridesMap((prev) => {
       const nextCar = { ...(prev[carId] || {}) };
       if (val === null || Number.isNaN(val)) {
@@ -287,6 +295,30 @@ export const App: React.FC = () => {
         nextCar[key] = val;
       }
       return { ...prev, [carId]: nextCar };
+    });
+  };
+
+  const setCarInterior = (carId: string, interior: InteriorPackageId) => {
+    setOverridesMap((prev) => {
+      const nextCar: CarOverrides = { ...(prev[carId] || {}), interior };
+      return { ...prev, [carId]: nextCar };
+    });
+  };
+
+  const toggleCarSpecialOption = (carId: string, optId: SpecialOptionId) => {
+    setOverridesMap((prev) => {
+      const prevCar = prev[carId] || {};
+      const currOpts = prevCar.options || [];
+      const nextOpts = currOpts.includes(optId)
+        ? currOpts.filter((x) => x !== optId)
+        : [...currOpts, optId];
+      return {
+        ...prev,
+        [carId]: {
+          ...prevCar,
+          options: nextOpts,
+        },
+      };
     });
   };
 
@@ -309,7 +341,7 @@ export const App: React.FC = () => {
   const openDetail = (
     id: string,
     formKey?: FahrwertFormKey,
-    mediaMode: 'photo' | '3d' | 'xray' = 'photo'
+    mediaMode: 'photo' | '3d' | 'interior' | 'xray' = 'photo'
   ) => {
     navigateWithTransition(() => {
       setDetailId(id);
@@ -1832,10 +1864,11 @@ export const App: React.FC = () => {
           }}
         >
           <div>
-            {/* Media Mode Switcher: Photo vs 360° 3D Studio vs X-Ray */}
+            {/* Media Mode Switcher: Photo vs 360° 3D Studio vs 3D Interior vs X-Ray */}
             <div
               style={{
                 display: 'inline-flex',
+                flexWrap: 'wrap',
                 gap: 4,
                 padding: 3,
                 marginBottom: 10,
@@ -1847,9 +1880,10 @@ export const App: React.FC = () => {
               {(
                 [
                   ['photo', lang === 'sv' ? '📷 Studiofoto' : '📷 Studiofoto'],
-                  ['3d', lang === 'sv' ? '🧊 360° 3D-Studio' : '🧊 360° 3D-Studio'],
+                  ['3d', lang === 'sv' ? '🧊 360° Exteriör' : '🧊 360° Exterieur'],
+                  ['interior', lang === 'sv' ? '🛋️ 3D-Interiör (Cockpit)' : '🛋️ 3D-Interieur (Cockpit)'],
                   ['xray', lang === 'sv' ? '⚡ 3D Röntgen (Batteri)' : '⚡ 3D-Röntgen (Antrieb)'],
-                ] as Array<['photo' | '3d' | 'xray', string]>
+                ] as Array<['photo' | '3d' | 'interior' | 'xray', string]>
               ).map(([mKey, mLabel]) => (
                 <button
                   key={mKey}
@@ -1896,26 +1930,51 @@ export const App: React.FC = () => {
                     mixBlendMode: 'multiply',
                   }}
                 />
-                <button
-                  type="button"
-                  onClick={() => setDetailMediaMode('3d')}
+                <div
                   style={{
                     position: 'absolute',
                     bottom: 14,
                     right: 14,
-                    padding: '8px 14px',
-                    borderRadius: PAL.radiusBadge,
-                    border: 'none',
-                    background: PAL.selBg,
-                    color: PAL.selFg,
-                    fontSize: 12,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    boxShadow: '0 6px 18px rgba(0,0,0,0.18)',
+                    display: 'flex',
+                    gap: 8,
+                    flexWrap: 'wrap',
                   }}
                 >
-                  {lang === 'sv' ? '🧊 Starta 360° 3D-vy →' : '🧊 360° 3D-Ansicht starten →'}
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => setDetailMediaMode('interior')}
+                    style={{
+                      padding: '8px 13px',
+                      borderRadius: PAL.radiusBadge,
+                      border: `1px solid ${PAL.line}`,
+                      background: PAL.card,
+                      color: PAL.ink,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      boxShadow: '0 6px 18px rgba(0,0,0,0.12)',
+                    }}
+                  >
+                    {lang === 'sv' ? '🛋️ 3D-Interiör' : '🛋️ 3D-Interieur'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDetailMediaMode('3d')}
+                    style={{
+                      padding: '8px 14px',
+                      borderRadius: PAL.radiusBadge,
+                      border: 'none',
+                      background: PAL.selBg,
+                      color: PAL.selFg,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      boxShadow: '0 6px 18px rgba(0,0,0,0.18)',
+                    }}
+                  >
+                    {lang === 'sv' ? '🧊 Starta 360° 3D-vy →' : '🧊 360° 3D-Ansicht starten →'}
+                  </button>
+                </div>
               </div>
             ) : (
               <Car3DStudio
@@ -1924,6 +1983,16 @@ export const App: React.FC = () => {
                 pal={PAL}
                 lang={lang}
                 initialXray={detailMediaMode === 'xray'}
+                initialMode={
+                  detailMediaMode === 'interior'
+                    ? 'interior'
+                    : detailMediaMode === 'xray'
+                      ? 'xray'
+                      : 'cad'
+                }
+                selectedInterior={ov.interior || 'anthracite'}
+                selectedOptions={ov.options || []}
+                onSelectInterior={(id) => setCarInterior(car.id, id)}
               />
             )}
           </div>
@@ -1957,11 +2026,21 @@ export const App: React.FC = () => {
               }}
             >
               {[
-                [lang === 'sv' ? 'Listpris' : 'Listenpreis', fmtCurrency(calc.meta.list, k)],
-                [lang === 'sv' ? 'Räckvidd WLTP' : 'Reichweite WLTP', `${car.range} km`],
+                [
+                  lang === 'sv' ? 'Konfigurerat pris' : 'Konfigurierter Preis',
+                  calc.meta.optionsList > 0
+                    ? `${fmtCurrency(calc.meta.list, k)} (+${fmtCurrency(calc.meta.optionsList, k)})`
+                    : fmtCurrency(calc.meta.list, k),
+                ],
+                [
+                  lang === 'sv' ? 'Räckvidd WLTP' : 'Reichweite WLTP',
+                  `${calc.meta.effRange} km${calc.meta.effRange > car.range ? ' (🔥 VP)' : ''}`,
+                ],
                 [
                   lang === 'sv' ? 'Förbrukning' : 'Verbrauch',
-                  car.kwh > 0 ? `${car.kwh.toLocaleString('de-AT')} kWh` : `${car.l.toLocaleString('de-AT')} l`,
+                  car.kwh > 0
+                    ? `${calc.meta.effKwh.toLocaleString('de-AT')} kWh`
+                    : `${car.l.toLocaleString('de-AT')} l`,
                 ],
                 [
                   lang === 'sv' ? 'Effekt (Peak / P.2)' : 'Leistung (Peak / P.2)',
@@ -2064,6 +2143,493 @@ export const App: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {/* ================================================================ */}
+        {/* INTERIÖR & SPECIALVAL (SONDERAUSSTATTUNG) CONFIGURATOR           */}
+        {/* ================================================================ */}
+        {(() => {
+          const activeIntId: InteriorPackageId = ov.interior || 'anthracite';
+          const activeOpts: SpecialOptionId[] = ov.options || [];
+          const availableSpecialOpts = SPECIAL_OPTIONS.filter(
+            (opt) => !opt.bevOnly || car.fuel === 'bev'
+          );
+          const luxusLimitLocal = Math.round(40000 * k.pf);
+          const sacHalfLimitLocal = Math.round(48000 * k.pf);
+          const sacMaxLimitLocal = Math.round(80000 * k.pf);
+          const carPriceForTax = Math.max(0, calc.meta.list - calc.meta.wallboxPrice);
+          const luxusRatioPct = Math.min(100, Math.round((carPriceForTax / sacMaxLimitLocal) * 100));
+          const overLuxus = carPriceForTax > luxusLimitLocal;
+
+          return (
+            <div
+              style={{
+                background: PAL.card,
+                border: `1px solid ${PAL.line}`,
+                borderRadius: PAL.radiusCard,
+                padding: 24,
+                marginBottom: 24,
+              }}
+            >
+              {/* Header row */}
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-start',
+                  flexWrap: 'wrap',
+                  gap: 12,
+                  marginBottom: 18,
+                }}
+              >
+                <div>
+                  <div
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      fontSize: 11,
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.06em',
+                      color: PAL.accent,
+                      marginBottom: 4,
+                    }}
+                  >
+                    <span>🛋️ {lang === 'sv' ? 'Interiör & Specialval' : 'Interieur & Sonderausstattung'}</span>
+                    <span
+                      style={{
+                        padding: '2px 8px',
+                        borderRadius: 999,
+                        background: PAL.st.gesetz.bg,
+                        color: PAL.st.gesetz.fg,
+                        fontSize: 10,
+                      }}
+                    >
+                      {lang === 'sv'
+                        ? 'Live i 3D-Cockpit & TCO-kalkyl'
+                        : 'Live in 3D-Cockpit & TCO-Rechner'}
+                    </span>
+                  </div>
+                  <h2
+                    style={{
+                      margin: 0,
+                      fontSize: 20,
+                      fontWeight: 700,
+                      letterSpacing: '-0.02em',
+                    }}
+                  >
+                    {lang === 'sv'
+                      ? 'Skräddarsy kupé, klädsel och tillval – se direkt hur skatt & månadskostnad påverkas'
+                      : 'Innenraum, Polsterung & Pakete konfigurieren — inkl. Luxustangente & Sachbezug-Effekt'}
+                  </h2>
+                </div>
+
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDetailMediaMode('interior');
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    style={{
+                      padding: '8px 14px',
+                      borderRadius: PAL.radiusBadge,
+                      border: `1px solid ${PAL.accent}`,
+                      background: detailMediaMode === 'interior' ? PAL.accent : 'transparent',
+                      color: detailMediaMode === 'interior' ? PAL.accentFg : PAL.accent,
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {lang === 'sv'
+                      ? '🛋️ Öppna interaktiv 360° 3D-Interiör ↑'
+                      : '🛋️ Interaktives 360° 3D-Cockpit öffnen ↑'}
+                  </button>
+                  {(activeIntId !== 'anthracite' || activeOpts.length > 0) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCarInterior(car.id, 'anthracite');
+                        setOverridesMap((prev) => ({
+                          ...prev,
+                          [car.id]: { ...(prev[car.id] || {}), interior: 'anthracite', options: [] },
+                        }));
+                      }}
+                      style={{
+                        padding: '8px 12px',
+                        borderRadius: PAL.radiusBadge,
+                        border: `1px solid ${PAL.line}`,
+                        background: PAL.inputBg,
+                        color: PAL.muted,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {lang === 'sv' ? 'Återställ tillval' : 'Ausstattung zurücksetzen'}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* 1. INTERIOR UPHOLSTERY & TRIM PACKAGES */}
+              <div style={{ marginBottom: 20 }}>
+                <div
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: PAL.subInk,
+                    marginBottom: 10,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                  }}
+                >
+                  <span>
+                    1. {lang === 'sv' ? 'Välj Interiör & Klädsel (uppdaterar 3D-Cockpit direkt)' : 'Interieur & Sitzpolsterung wählen (synchron mit 3D-Cockpit)'}
+                  </span>
+                  <span style={{ fontSize: 11, color: PAL.muted, fontWeight: 500 }}>
+                    {lang === 'sv' ? 'Klicka för att byta sätesläder & dekorpaneler' : 'Klicken für Leder- & Dekorwechsel'}
+                  </span>
+                </div>
+
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                    gap: 10,
+                  }}
+                >
+                  {INTERIOR_PACKAGES.map((pkg) => {
+                    const isSelected = activeIntId === pkg.id;
+                    const priceLocal = Math.round(pkg.priceEur * k.pf);
+                    return (
+                      <button
+                        key={pkg.id}
+                        type="button"
+                        onClick={() => setCarInterior(car.id, pkg.id)}
+                        style={{
+                          textAlign: 'left',
+                          padding: 14,
+                          borderRadius: direction === 'fintech' ? 12 : 8,
+                          border: `1.5px solid ${isSelected ? PAL.accent : PAL.line}`,
+                          background: isSelected ? PAL.inputBg : PAL.card,
+                          color: PAL.ink,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'space-between',
+                          gap: 10,
+                          transition: 'border-color 0.15s ease, transform 0.15s ease',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+                          {/* Dual swatch: Leather + Trim + Ambient */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span
+                              title={lang === 'sv' ? 'Sätesklädsel' : 'Sitzbezug'}
+                              style={{
+                                width: 26,
+                                height: 26,
+                                borderRadius: '50%',
+                                background: `linear-gradient(135deg, ${pkg.seatHex} 55%, ${pkg.trimHex} 55%)`,
+                                border: '2px solid rgba(128,128,128,0.35)',
+                                boxShadow: isSelected ? `0 0 0 2px ${PAL.accent}` : 'none',
+                                display: 'inline-block',
+                              }}
+                            />
+                            <span
+                              title={lang === 'sv' ? 'Ambient LED' : 'Ambientelicht'}
+                              style={{
+                                width: 10,
+                                height: 10,
+                                borderRadius: '50%',
+                                background: pkg.ambientHex,
+                                boxShadow: `0 0 8px ${pkg.ambientHex}`,
+                                display: 'inline-block',
+                              }}
+                            />
+                          </div>
+
+                          <span
+                            style={{
+                              fontSize: 11.5,
+                              fontWeight: 700,
+                              padding: '3px 8px',
+                              borderRadius: 999,
+                              background: isSelected ? PAL.accent : PAL.inputBg,
+                              color: isSelected ? PAL.accentFg : PAL.subInk,
+                              fontVariantNumeric: 'tabular-nums',
+                            }}
+                          >
+                            {priceLocal === 0
+                              ? lang === 'sv'
+                                ? 'Ingår (0 €)'
+                                : 'Serie (0 €)'
+                              : `+${fmtCurrency(priceLocal, k)}`}
+                          </span>
+                        </div>
+
+                        <div>
+                          <div style={{ fontSize: 13.5, fontWeight: 700, marginBottom: 3 }}>
+                            {lang === 'sv' ? pkg.nameSv : pkg.nameDe}
+                          </div>
+                          <div style={{ fontSize: 11.5, color: PAL.muted, lineHeight: 1.35 }}>
+                            {lang === 'sv' ? pkg.descSv : pkg.descDe}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 2. SPECIALVAL / SONDERAUSSTATTUNG PACKAGES */}
+              <div style={{ marginBottom: 18 }}>
+                <div
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: PAL.subInk,
+                    marginBottom: 10,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: 6,
+                  }}
+                >
+                  <span>
+                    2. {lang === 'sv' ? 'Specialval & Utrustningspaket (Sonderausstattung)' : 'Sonderausstattung & Technik-Pakete'}
+                  </span>
+                  <span style={{ fontSize: 11, color: PAL.muted, fontWeight: 500 }}>
+                    {lang === 'sv'
+                      ? 'Värmepump ökar räckvidden · Vinterhjul sänker däckdrift · Wallbox är 100 % skattefri (§ 4c)'
+                      : 'Wärmepumpe erhöht Reichweite · Winterräder senken Reifenkosten · Wallbox § 4c steuerfrei'}
+                  </span>
+                </div>
+
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(245px, 1fr))',
+                    gap: 10,
+                  }}
+                >
+                  {availableSpecialOpts.map((opt) => {
+                    const on = activeOpts.includes(opt.id);
+                    const priceLocal = Math.round(opt.priceEur * k.pf);
+
+                    // Smart impact tag for each special option
+                    let effectBadge: string | null = null;
+                    if (opt.id === 'heatpump') {
+                      effectBadge = lang === 'sv' ? '−6 % el / +6 % räckvidd' : '−6 % kWh / +6 % Reichweite';
+                    } else if (opt.id === 'winter') {
+                      effectBadge = lang === 'sv' ? 'Sänker däckslitage/mån' : 'Senkt Reifenverschleiß/Mon.';
+                    } else if (opt.id === 'wallbox') {
+                      effectBadge = lang === 'sv' ? '§ 4c: 0 € Förmånsvärde & ej Luxustangente' : '§ 4c: 0 € Sachbezug & kein Luxusdeckel';
+                    } else if (opt.id === 'hud_matrix') {
+                      effectBadge = lang === 'sv' ? 'Visar AR-HUD i 3D-Interiör' : 'Zeigt AR-HUD im 3D-Cockpit';
+                    } else if (opt.id === 'pano') {
+                      effectBadge = lang === 'sv' ? 'Öppnar glastak i 3D-Interiör' : 'Glastach im 3D-Cockpit sichtbar';
+                    } else if (opt.id === 'audio') {
+                      effectBadge = lang === 'sv' ? '3D-högtalare i kupén' : '3D-Soundsystem im Cockpit';
+                    } else if (opt.id === 'aero20' || opt.id === 'towbar') {
+                      effectBadge = lang === 'sv' ? 'Syns i 3D-Röntgen' : 'Sichtbar in 3D-Röntgen';
+                    }
+
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => toggleCarSpecialOption(car.id, opt.id)}
+                        style={{
+                          textAlign: 'left',
+                          padding: '12px 14px',
+                          borderRadius: direction === 'fintech' ? 12 : 8,
+                          border: `1.5px solid ${on ? PAL.accent : PAL.line}`,
+                          background: on ? PAL.inputBg : PAL.card,
+                          color: PAL.ink,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'space-between',
+                          gap: 8,
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontSize: 13, fontWeight: 700 }}>
+                            {opt.icon} {lang === 'sv' ? opt.nameSv : opt.nameDe}
+                          </span>
+                          <span
+                            style={{
+                              fontSize: 11.5,
+                              fontWeight: 700,
+                              padding: '2px 8px',
+                              borderRadius: 999,
+                              background: on ? PAL.accent : PAL.inputBg,
+                              color: on ? PAL.accentFg : PAL.subInk,
+                              fontVariantNumeric: 'tabular-nums',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {on ? '✓ ' : '+'}
+                            {fmtCurrency(priceLocal, k)}
+                          </span>
+                        </div>
+
+                        <div style={{ fontSize: 11.5, color: PAL.muted, lineHeight: 1.35 }}>
+                          {lang === 'sv' ? opt.descSv : opt.descDe}
+                        </div>
+
+                        {effectBadge && (
+                          <div>
+                            <span
+                              style={{
+                                display: 'inline-block',
+                                fontSize: 10.5,
+                                fontWeight: 600,
+                                padding: '2px 7px',
+                                borderRadius: 6,
+                                background: opt.id === 'wallbox' || opt.id === 'heatpump'
+                                  ? PAL.st.gesetz.bg
+                                  : PAL.st.markt.bg,
+                                color: opt.id === 'wallbox' || opt.id === 'heatpump'
+                                  ? PAL.st.gesetz.fg
+                                  : PAL.st.markt.fg,
+                              }}
+                            >
+                              {effectBadge}
+                            </span>
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 3. LIVE PRIS- & LUXUSTANGENTE BAR (AT § 20 EStG / Sachbezugswerte-VO) */}
+              <div
+                style={{
+                  padding: '14px 16px',
+                  borderRadius: direction === 'fintech' ? 12 : 8,
+                  background: PAL.inputBg,
+                  border: `1px solid ${PAL.line}`,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 10,
+                }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: 10,
+                  }}
+                >
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, alignItems: 'baseline' }}>
+                    <div>
+                      <span style={{ fontSize: 11, color: PAL.muted }}>
+                        {lang === 'sv' ? 'Grundpris:' : 'Basis-Listenpreis:'}{' '}
+                      </span>
+                      <strong style={{ fontSize: 13.5, fontVariantNumeric: 'tabular-nums' }}>
+                        {fmtCurrency(calc.meta.baseList, k)}
+                      </strong>
+                    </div>
+                    <div>
+                      <span style={{ fontSize: 11, color: PAL.muted }}>
+                        + {lang === 'sv' ? 'Interiör & Specialval:' : 'Interieur & Sonderausstattung:'}{' '}
+                      </span>
+                      <strong
+                        style={{
+                          fontSize: 13.5,
+                          color: calc.meta.optionsList > 0 ? PAL.accent : PAL.ink,
+                          fontVariantNumeric: 'tabular-nums',
+                        }}
+                      >
+                        +{fmtCurrency(calc.meta.optionsList, k)}
+                      </strong>
+                    </div>
+                    <div>
+                      <span style={{ fontSize: 11, color: PAL.muted }}>
+                        = {lang === 'sv' ? 'Konfigurerat listpris:' : 'Konfigurierter Gesamtpreis:'}{' '}
+                      </span>
+                      <strong style={{ fontSize: 15, fontVariantNumeric: 'tabular-nums' }}>
+                        {fmtCurrency(calc.meta.list, k)}
+                      </strong>
+                    </div>
+                  </div>
+
+                  <div style={{ fontSize: 11.5, fontWeight: 600, color: overLuxus ? '#b45309' : PAL.accent }}>
+                    {country === 'AT' ? (
+                      overLuxus ? (
+                        lang === 'sv' ? (
+                          `⚠️ Över 40 000 € Luxustangente: Avdrag i Firma/Ordination kapas vid ${fmtCurrency(luxusLimitLocal, k)} (${Math.round((luxusLimitLocal / carPriceForTax) * 100)} % avdragsgillt)`
+                        ) : (
+                          `⚠️ Über 40.000 € Luxustangente: AfA & Vorsteuerabzug bei ${fmtCurrency(luxusLimitLocal, k)} gedeckelt (${Math.round((luxusLimitLocal / carPriceForTax) * 100)} % abzugsfähig)`
+                        )
+                      ) : lang === 'sv' ? (
+                        `✓ Inom 40 000 € Luxustangente (${fmtCurrency(luxusLimitLocal - carPriceForTax, k)} kvar till taket)`
+                      ) : (
+                        `✓ Innerhalb 40.000 € Luxustangente (noch ${fmtCurrency(luxusLimitLocal - carPriceForTax, k)} Spielraum)`
+                      )
+                    ) : null}
+                  </div>
+                </div>
+
+                {country === 'AT' && (
+                  <div>
+                    <div
+                      style={{
+                        position: 'relative',
+                        height: 8,
+                        borderRadius: 999,
+                        background: PAL.line,
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: `${luxusRatioPct}%`,
+                          height: '100%',
+                          background: overLuxus
+                            ? 'linear-gradient(90deg, #0d6e4f 0%, #d97706 70%, #dc2626 100%)'
+                            : PAL.accent,
+                          transition: 'width 0.2s ease',
+                        }}
+                      />
+                    </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        fontSize: 10.5,
+                        color: PAL.muted,
+                        marginTop: 4,
+                        fontVariantNumeric: 'tabular-nums',
+                      }}
+                    >
+                      <span>0 €</span>
+                      <span>
+                        40 000 € ({lang === 'sv' ? 'Luxustangente / Momsgräns' : 'Luxustangente / Vorsteuergrenze'})
+                      </span>
+                      <span>
+                        {fmtCurrency(sacHalfLimitLocal, k)} ({lang === 'sv' ? 'Max 1,5 % Sachbezug' : 'Deckel 1,5 % Sachbezug'})
+                      </span>
+                      <span>
+                        {fmtCurrency(sacMaxLimitLocal, k)} ({lang === 'sv' ? '0 % moms över 80k' : '0 % Vorsteuer ab 80k'})
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* 4 HALTEFORM CARDS */}
         <div className="fw-detail-forms-grid">
@@ -2466,7 +3032,7 @@ export const App: React.FC = () => {
                       ov.ins ?? '',
                       '95',
                     ],
-                  ] as Array<[string, keyof CarOverrides, number | '', string]>
+                  ] as Array<[string, Exclude<keyof CarOverrides, 'interior' | 'options'>, number | '', string]>
                 ).map(([label, key, val, ph]) => (
                   <label key={key} style={{ fontSize: 11, color: PAL.muted }}>
                     {label}
