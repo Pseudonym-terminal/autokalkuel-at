@@ -424,28 +424,99 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
     });
   }, []);
 
-  // Helper to apply live Leather Upholstery, Dashboard Trim & 64-color Ambient LED to the 2.0M-polygon 3D Interior CAD model
+  // Helper to apply live Leather Upholstery, Dashboard Trim, Silk Contrast Stitching & 64-color Ambient LED to the 2.0M-polygon 3D Interior CAD model
   const applyInteriorCadMaterials = useCallback((intPkgId: InteriorPackageId, ambHex: string) => {
     const api = sfApiRef.current;
     const materials = sfMaterialsRef.current;
     if (!api || !materials.length) return;
 
-    const pkg = INTERIOR_PACKAGES.find((p) => p.id === intPkgId) || INTERIOR_PACKAGES[0];
-    const [sr, sg, sb] = hexToLinearRgb(pkg.seatHex);
-    const [tr, tg, tb] = hexToLinearRgb(pkg.trimHex);
+    // Physically calibrated linear PBR values under Sketchfab studio HDRI lighting (prevents highlight blowout & preserves BumpMap leather grain)
+    const CALIBRATED_LEATHER: Record<
+      InteriorPackageId,
+      {
+        seatRgb: [number, number, number];
+        quiltRgb: [number, number, number];
+        trimRgb: [number, number, number];
+        stitchRgb: [number, number, number];
+        albedoFactor: number;
+        gloss: number;
+        rough: number;
+        trimMetal: number;
+      }
+    > = {
+      anthracite: {
+        seatRgb: [0.052, 0.058, 0.068],
+        quiltRgb: [0.028, 0.032, 0.038],
+        trimRgb: [0.38, 0.41, 0.46],
+        stitchRgb: [0.26, 0.3, 0.36],
+        albedoFactor: 0.84,
+        gloss: 0.42,
+        rough: 0.58,
+        trimMetal: 0.85,
+      },
+      'nappa-black': {
+        seatRgb: [0.02, 0.022, 0.026],
+        quiltRgb: [0.011, 0.012, 0.015],
+        trimRgb: [0.075, 0.082, 0.095],
+        stitchRgb: [0.38, 0.41, 0.45],
+        albedoFactor: 0.88,
+        gloss: 0.82,
+        rough: 0.24,
+        trimMetal: 0.65,
+      },
+      cognac: {
+        seatRgb: [0.179, 0.059, 0.018],
+        quiltRgb: [0.054, 0.012, 0.002],
+        trimRgb: [0.19, 0.095, 0.042],
+        stitchRgb: [0.46, 0.31, 0.18],
+        albedoFactor: 0.8,
+        gloss: 0.82,
+        rough: 0.28,
+        trimMetal: 0.35,
+      },
+      'nordic-beige': {
+        seatRgb: [0.31, 0.245, 0.175],
+        quiltRgb: [0.19, 0.145, 0.098],
+        trimRgb: [0.36, 0.29, 0.21],
+        stitchRgb: [0.44, 0.36, 0.26],
+        albedoFactor: 0.74,
+        gloss: 0.74,
+        rough: 0.32,
+        trimMetal: 0.45,
+      },
+    };
+
+    const cal = CALIBRATED_LEATHER[intPkgId] || CALIBRATED_LEATHER.cognac;
+    const [sr, sg, sb] = cal.seatRgb;
+    const [qr, qg, qb] = cal.quiltRgb;
+    const [tr, tg, tb] = cal.trimRgb;
+    const [str, stg, stb] = cal.stitchRgb;
     const [ar, ag, ab] = hexToLinearRgb(ambHex);
 
     const seatLeatherRegex = /seat_leather|^leather$|brown_plastic|brow_speaker_cover|seats_low|^plastic$/i;
     const seatGridQuiltRegex = /seat_grid|^cloth/i;
     const trimInlayRegex = /wiredrawing_aluminum|semi_silver_metal|semi_metal|gray_plastic|^silver$/i;
+    const stitchThreadRegex = /stich_line/i;
     const ambientLedRegex =
-      /round_blue_self|red_self|round_red_self|red_double|orange_self|red_slef|green_self|stich_line|^line$|material0/i;
+      /round_blue_self|red_self|round_red_self|red_double|orange_self|red_slef|green_self|^line$|material0/i;
 
-    const setChannelRgb = (chObj: any, r: number, g: number, b: number) => {
-      if (!chObj) return;
-      chObj.enable = true;
-      chObj.color = [r, g, b];
-      chObj.factor = 1;
+    // Preserves existing normal/bump/opacity/diffuse textures while updating PBR base color
+    const updateBaseColor = (ch: any, r: number, g: number, b: number, factor = 0.82) => {
+      if (ch.AlbedoPBR) {
+        ch.AlbedoPBR.enable = true;
+        ch.AlbedoPBR.color = [r, g, b];
+        ch.AlbedoPBR.factor = factor;
+      }
+      if (ch.DiffusePBR && !ch.DiffusePBR.texture) {
+        ch.DiffusePBR.enable = true;
+        ch.DiffusePBR.color = [r, g, b];
+        ch.DiffusePBR.factor = factor;
+      }
+      if (ch.DiffuseColor && !ch.DiffuseColor.texture) {
+        ch.DiffuseColor.enable = true;
+        ch.DiffuseColor.color = [r, g, b];
+        ch.DiffuseColor.factor = 1;
+      }
     };
 
     materials.forEach((mat) => {
@@ -455,53 +526,73 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
 
       if (seatLeatherRegex.test(mName)) {
         const updated = JSON.parse(JSON.stringify(mat));
-        setChannelRgb(updated.channels.AlbedoPBR, sr, sg, sb);
-        setChannelRgb(updated.channels.DiffusePBR, sr, sg, sb);
-        setChannelRgb(updated.channels.DiffuseColor, sr, sg, sb);
+        updateBaseColor(updated.channels, sr, sg, sb, cal.albedoFactor);
+        // Never self-emit on leather so natural HDRI shadows and BumpMap grain stay crisp
         if (updated.channels.EmitColor) {
-          updated.channels.EmitColor.enable = true;
-          updated.channels.EmitColor.color = [sr * 0.14, sg * 0.14, sb * 0.14];
-          updated.channels.EmitColor.factor = 1;
+          updated.channels.EmitColor.enable = false;
+          updated.channels.EmitColor.factor = 0;
         }
-        if (updated.channels.RoughnessPBR) {
+        if (updated.channels.MetalnessPBR && !updated.channels.MetalnessPBR.texture) {
+          updated.channels.MetalnessPBR.enable = true;
+          updated.channels.MetalnessPBR.factor = 0.04;
+        }
+        if (updated.channels.SpecularF0 && !updated.channels.SpecularF0.texture) {
+          updated.channels.SpecularF0.enable = true;
+          updated.channels.SpecularF0.factor = 0.28;
+        }
+        if (updated.channels.RoughnessPBR && !updated.channels.RoughnessPBR.texture) {
           updated.channels.RoughnessPBR.enable = true;
-          updated.channels.RoughnessPBR.factor = intPkgId === 'nappa-black' ? 0.25 : 0.38;
+          updated.channels.RoughnessPBR.factor = cal.rough;
+        }
+        if (updated.channels.GlossinessPBR) {
+          updated.channels.GlossinessPBR.enable = true;
+          updated.channels.GlossinessPBR.factor = cal.gloss;
+        }
+        if (updated.channels.BumpMap) {
+          updated.channels.BumpMap.enable = true;
+          updated.channels.BumpMap.factor = 2.8;
         }
         api.setMaterial(updated);
       } else if (seatGridQuiltRegex.test(mName)) {
         const updated = JSON.parse(JSON.stringify(mat));
-        const qr = sr * 0.68;
-        const qg = sg * 0.68;
-        const qb = sb * 0.68;
-        setChannelRgb(updated.channels.AlbedoPBR, qr, qg, qb);
-        setChannelRgb(updated.channels.DiffusePBR, qr, qg, qb);
-        setChannelRgb(updated.channels.DiffuseColor, qr, qg, qb);
+        updateBaseColor(updated.channels, qr, qg, qb, cal.albedoFactor);
         if (updated.channels.EmitColor) {
-          updated.channels.EmitColor.enable = true;
-          updated.channels.EmitColor.color = [qr * 0.12, qg * 0.12, qb * 0.12];
-          updated.channels.EmitColor.factor = 1;
+          updated.channels.EmitColor.enable = false;
+          updated.channels.EmitColor.factor = 0;
+        }
+        if (updated.channels.MetalnessPBR && !updated.channels.MetalnessPBR.texture) {
+          updated.channels.MetalnessPBR.enable = true;
+          updated.channels.MetalnessPBR.factor = 0.04;
+        }
+        api.setMaterial(updated);
+      } else if (stitchThreadRegex.test(mName)) {
+        // Physical silk contrast stitching on steering wheel, seats & gear boot (not neon glowing)
+        const updated = JSON.parse(JSON.stringify(mat));
+        updateBaseColor(updated.channels, str, stg, stb, 0.9);
+        if (updated.channels.EmitColor) {
+          updated.channels.EmitColor.enable = false;
+          updated.channels.EmitColor.factor = 0;
         }
         api.setMaterial(updated);
       } else if (trimInlayRegex.test(mName)) {
         const updated = JSON.parse(JSON.stringify(mat));
-        setChannelRgb(updated.channels.AlbedoPBR, tr, tg, tb);
-        setChannelRgb(updated.channels.DiffusePBR, tr, tg, tb);
-        setChannelRgb(updated.channels.DiffuseColor, tr, tg, tb);
+        updateBaseColor(updated.channels, tr, tg, tb, 0.52);
         if (updated.channels.EmitColor) {
-          updated.channels.EmitColor.enable = true;
-          updated.channels.EmitColor.color = [tr * 0.16, tg * 0.16, tb * 0.16];
-          updated.channels.EmitColor.factor = 1;
+          updated.channels.EmitColor.enable = false;
+          updated.channels.EmitColor.factor = 0;
+        }
+        if (updated.channels.MetalnessPBR && !updated.channels.MetalnessPBR.texture) {
+          updated.channels.MetalnessPBR.enable = true;
+          updated.channels.MetalnessPBR.factor = cal.trimMetal;
         }
         api.setMaterial(updated);
       } else if (ambientLedRegex.test(mName)) {
         const updated = JSON.parse(JSON.stringify(mat));
-        setChannelRgb(updated.channels.AlbedoPBR, ar, ag, ab);
-        setChannelRgb(updated.channels.DiffusePBR, ar, ag, ab);
-        setChannelRgb(updated.channels.DiffuseColor, ar, ag, ab);
+        updateBaseColor(updated.channels, ar, ag, ab, 1.0);
         if (updated.channels.EmitColor) {
           updated.channels.EmitColor.enable = true;
           updated.channels.EmitColor.color = [ar, ag, ab];
-          updated.channels.EmitColor.factor = 0.95;
+          updated.channels.EmitColor.factor = 1.35;
         }
         api.setMaterial(updated);
       }
@@ -525,7 +616,7 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
     const initViewer = () => {
       if (cancelled || !cadIframeRef.current) return;
       const SketchfabCtor = (window as any).Sketchfab;
-      const spinSpeed = mode === 'interior' ? 0.03 : 0.12;
+      const spinSpeed = mode === 'interior' ? 0.02 : 0.12;
       if (!SketchfabCtor) {
         cadIframeRef.current.src = `https://sketchfab.com/models/${activeSketchfabUid}/embed?autostart=1&preload=1&ui_theme=dark&dnt=1&autospin=${spinSpeed}&ui_infos=0&ui_watermark=0&ui_stop=0&ui_inspector=0&ui_settings=0&ui_vr=0&ui_help=0&ui_annotations=0`;
         return;
@@ -557,7 +648,49 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
 
             if (typeof api.setBackground === 'function') {
               api.setBackground({
-                color: pal.id === 'premium' ? [0.055, 0.07, 0.098] : [0.08, 0.11, 0.105],
+                color: pal.id === 'premium' ? [0.05, 0.065, 0.09] : [0.07, 0.095, 0.095],
+              });
+            }
+
+            // Enable cinema-grade studio Post-Processing (SSAO contact shadows, micro-sharpening, filmic tone mapping & subtle optical bloom)
+            if (typeof api.setPostProcessing === 'function') {
+              api.setPostProcessing({
+                enable: true,
+                ssaoEnable: true,
+                ssaoRadius: 0.16,
+                ssaoIntensity: 0.72,
+                ssaoBias: 0.03,
+                sharpenEnable: true,
+                sharpenFactor: 0.24,
+                bloomEnable: true,
+                bloomFactor: 0.12,
+                bloomThreshold: 0.86,
+                bloomRadius: 0.55,
+                toneMappingEnable: true,
+                toneMappingMethod: 'filmic',
+                exposure: mode === 'interior' ? 0.92 : 1.0,
+                brightness: 0.0,
+                contrast: 0.09,
+                saturation: 1.06,
+                vignetteEnable: true,
+                vignetteAmount: 0.22,
+                vignetteHardness: 0.72,
+              });
+            }
+
+            // Calibrate studio HDRI environment exposure so bright leathers & chrome never blow out
+            if (mode === 'interior' && typeof api.getEnvironment === 'function' && typeof api.setEnvironment === 'function') {
+              api.getEnvironment((err: any, env: any) => {
+                if (!err && env) {
+                  api.setEnvironment({
+                    ...env,
+                    enable: true,
+                    exposure: 1.08,
+                    lightIntensity: 1.9,
+                    shadowEnable: true,
+                    blur: 0.08,
+                  });
+                }
               });
             }
 
@@ -1319,7 +1452,7 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
         />
       )}
 
-      {/* UNIFIED NON-OVERLAPPING TOP HUD BAR */}
+      {/* UNIFIED SINGLE-ROW TOP HUD BAR */}
       <div
         style={{
           position: 'absolute',
@@ -1329,53 +1462,100 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'flex-start',
-          gap: 8,
-          flexWrap: 'wrap',
+          gap: 6,
           zIndex: 5,
           pointerEvents: 'none',
         }}
       >
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 5, maxWidth: '100%' }}>
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              padding: '4.5px 10px',
-              borderRadius: pal.radiusBadge,
-              background: 'rgba(11, 16, 23, 0.86)',
-              backdropFilter: 'blur(8px)',
-              color: '#FFFFFF',
-              fontSize: 10.5,
-              fontWeight: 700,
-              letterSpacing: '0.03em',
-              border: '1px solid rgba(255,255,255,0.14)',
-              width: 'fit-content',
-            }}
-          >
-            <span
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0, flex: '1 1 auto' }}>
+          {mode === 'interior' ? (
+            <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 4, pointerEvents: 'auto' }}>
+              {(Object.keys(INTERIOR_CAD_MODELS) as InteriorCadVariantId[]).map((vId) => {
+                const vDef = INTERIOR_CAD_MODELS[vId];
+                const isVarOn = interiorVariant === vId;
+                return (
+                  <button
+                    key={vId}
+                    type="button"
+                    onClick={() => setInteriorVariant(vId)}
+                    title={lang === 'sv' ? vDef.labelSv : vDef.labelDe}
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 700,
+                      padding: '4px 8px',
+                      borderRadius: 6,
+                      cursor: 'pointer',
+                      background: isVarOn ? '#B45309' : 'rgba(11, 16, 23, 0.86)',
+                      backdropFilter: 'blur(8px)',
+                      color: '#F8FAFC',
+                      border: isVarOn ? '1px solid #F59E0B' : '1px solid rgba(255,255,255,0.16)',
+                    }}
+                  >
+                    {lang === 'sv' ? vDef.shortSv : vDef.shortDe}
+                  </button>
+                );
+              })}
+              {[
+                ...(selectedOptions.includes('hud_matrix') ? ['📽️ AR-HUD'] : []),
+                ...(selectedOptions.includes('pano')
+                  ? [lang === 'sv' ? '🌤️ Panoramatak' : '🌤️ Panoramadach']
+                  : []),
+                ...(selectedOptions.includes('audio') ? ['🔊 3D-Audio'] : []),
+              ].map((chip) => (
+                <span
+                  key={chip}
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    padding: '3.5px 7px',
+                    borderRadius: 6,
+                    background: 'rgba(11, 16, 23, 0.84)',
+                    color: '#F8FAFC',
+                    border: '1px solid rgba(255,255,255,0.14)',
+                  }}
+                >
+                  {chip}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <div
               style={{
-                width: 7,
-                height: 7,
-                borderRadius: 99,
-                background: mode === 'xray' ? '#38BDF8' : mode === 'interior' ? '#F59E0B' : '#10B981',
-                flexShrink: 0,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '4.5px 10px',
+                borderRadius: pal.radiusBadge,
+                background: 'rgba(11, 16, 23, 0.86)',
+                backdropFilter: 'blur(8px)',
+                color: '#FFFFFF',
+                fontSize: 10.5,
+                fontWeight: 700,
+                letterSpacing: '0.03em',
+                border: '1px solid rgba(255,255,255,0.14)',
+                width: 'fit-content',
               }}
-            />
-            <span>
-              {mode === 'xray'
-                ? lang === 'sv'
-                  ? '3D RÖNTGEN · CHASSI & DRIVLINA'
-                  : '3D-RÖNTGEN · CHASSIS & ANTRIEB'
-                : mode === 'interior'
+            >
+              <span
+                style={{
+                  width: 7,
+                  height: 7,
+                  borderRadius: 99,
+                  background: mode === 'xray' ? '#38BDF8' : '#10B981',
+                  flexShrink: 0,
+                }}
+              />
+              <span>
+                {mode === 'xray'
                   ? lang === 'sv'
-                    ? `3D-INTERIÖR (${interiorCadModel.polygons.toLocaleString('de-AT')} POLY) · ${activeInteriorPkg.nameSv.toUpperCase()}`
-                    : `3D-INTERIEUR (${interiorCadModel.polygons.toLocaleString('de-AT')} POLY) · ${activeInteriorPkg.nameDe.toUpperCase()}`
+                    ? '3D RÖNTGEN · CHASSI & DRIVLINA'
+                    : '3D-RÖNTGEN · CHASSIS & ANTRIEB'
                   : lang === 'sv'
                     ? `3D-SHOWROOM · ${cadModel.polygons.toLocaleString('de-AT')} POLYGONER`
                     : `3D-SHOWROOM · ${cadModel.polygons.toLocaleString('de-AT')} POLYGONE`}
-            </span>
-          </div>
+              </span>
+            </div>
+          )}
 
           {showDims && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
@@ -1399,58 +1579,6 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
                   }}
                 >
                   {dChip}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {mode === 'interior' && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, pointerEvents: 'auto' }}>
-              {(Object.keys(INTERIOR_CAD_MODELS) as InteriorCadVariantId[]).map((vId) => {
-                const vDef = INTERIOR_CAD_MODELS[vId];
-                const isVarOn = interiorVariant === vId;
-                return (
-                  <button
-                    key={vId}
-                    type="button"
-                    onClick={() => setInteriorVariant(vId)}
-                    title={lang === 'sv' ? vDef.labelSv : vDef.labelDe}
-                    style={{
-                      fontSize: 10,
-                      fontWeight: 700,
-                      padding: '3px 8px',
-                      borderRadius: 5,
-                      cursor: 'pointer',
-                      background: isVarOn ? '#B45309' : 'rgba(15, 23, 42, 0.85)',
-                      color: '#F8FAFC',
-                      border: isVarOn ? '1px solid #F59E0B' : '1px solid rgba(255,255,255,0.16)',
-                    }}
-                  >
-                    {lang === 'sv' ? vDef.shortSv : vDef.shortDe}
-                  </button>
-                );
-              })}
-              {[
-                `${lang === 'sv' ? 'Bagage' : 'Kofferraum'}: ${dims.trunkLiters} L`,
-                ...(selectedOptions.includes('hud_matrix') ? ['📽️ AR-HUD Aktiv'] : []),
-                ...(selectedOptions.includes('pano')
-                  ? [lang === 'sv' ? '🌤️ Panoramatak' : '🌤️ Panoramadach']
-                  : []),
-                ...(selectedOptions.includes('audio') ? ['🔊 3D-Audio'] : []),
-              ].map((chip) => (
-                <span
-                  key={chip}
-                  style={{
-                    fontSize: 10,
-                    fontWeight: 700,
-                    padding: '2.5px 7px',
-                    borderRadius: 5,
-                    background: 'rgba(15, 23, 42, 0.85)',
-                    color: '#F8FAFC',
-                    border: '1px solid rgba(255,255,255,0.14)',
-                  }}
-                >
-                  {chip}
                 </span>
               ))}
             </div>
@@ -1490,7 +1618,7 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
           style={{
             display: 'flex',
             gap: 4,
-            flexWrap: 'wrap',
+            flexShrink: 0,
             pointerEvents: 'auto',
           }}
         >
@@ -1669,8 +1797,8 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
 
         {mode === 'interior' && (
           <>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 10.5, fontWeight: 600, opacity: 0.85 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 10, fontWeight: 600, opacity: 0.85 }}>
                 {lang === 'sv' ? 'Klädsel:' : 'Polster:'}
               </span>
               {INTERIOR_PACKAGES.map((pkg) => {
@@ -1684,8 +1812,8 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
                     style={{
                       display: 'inline-flex',
                       alignItems: 'center',
-                      gap: 5,
-                      padding: '3px 8px',
+                      gap: 4,
+                      padding: '3px 7px',
                       borderRadius: 6,
                       border: on ? '1.5px solid #F59E0B' : '1px solid rgba(255,255,255,0.2)',
                       background: on ? 'rgba(245, 158, 11, 0.22)' : 'rgba(255,255,255,0.08)',
@@ -1697,8 +1825,8 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
                   >
                     <span
                       style={{
-                        width: 11,
-                        height: 11,
+                        width: 10,
+                        height: 10,
                         borderRadius: 99,
                         background: pkg.seatHex,
                         border: '1px solid rgba(255,255,255,0.45)',
@@ -1713,14 +1841,14 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
                           ? 'Nappa'
                           : pkg.id === 'cognac'
                             ? 'Cognac'
-                            : 'Nordic Beige'}
+                            : 'Beige'}
                     </span>
                   </button>
                 );
               })}
 
-              <span style={{ fontSize: 10.5, fontWeight: 600, opacity: 0.85, marginLeft: 4 }}>
-                {lang === 'sv' ? 'Ambient:' : 'Ambiente:'}
+              <span style={{ fontSize: 10, fontWeight: 600, opacity: 0.85, marginLeft: 3 }}>
+                {lang === 'sv' ? 'Ljus:' : 'Ambiente:'}
               </span>
               {AMBIENT_COLORS.map((ac) => (
                 <button
@@ -1729,8 +1857,8 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
                   title={lang === 'sv' ? ac.labelSv : ac.labelDe}
                   onClick={() => setAmbientHex(ac.hex)}
                   style={{
-                    width: 15,
-                    height: 15,
+                    width: 14,
+                    height: 14,
                     borderRadius: 99,
                     background: ac.hex,
                     border: ambientHex === ac.hex ? '2px solid #FFFFFF' : '1px solid rgba(255,255,255,0.35)',
@@ -1754,11 +1882,11 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
                   type="button"
                   onClick={() => applyInteriorCamPreset(cKey)}
                   style={{
-                    padding: '4px 8px',
+                    padding: '3.5px 7px',
                     borderRadius: 5,
                     border: 'none',
                     cursor: 'pointer',
-                    fontSize: 10.5,
+                    fontSize: 10,
                     fontWeight: 700,
                     background: intCamPreset === cKey ? '#B45309' : 'rgba(255, 255, 255, 0.12)',
                     color: '#FFFFFF',
