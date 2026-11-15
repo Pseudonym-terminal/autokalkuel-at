@@ -223,7 +223,7 @@ export function getCarDimensions(car: FahrwertCar): CarDimensions {
 
 type CameraPreset = 'front34' | 'side' | 'rear34' | 'top';
 type InteriorCamPreset = 'driver' | 'lounge' | 'top';
-type InteriorCadVariantId = 'executive' | 'comfort' | 'ev_lounge';
+type InteriorCadVariantId = 'executive' | 'comfort';
 
 const INTERIOR_CAD_MODELS: Record<
   InteriorCadVariantId,
@@ -240,18 +240,10 @@ const INTERIOR_CAD_MODELS: Record<
   comfort: {
     uid: '1a35e1e2c88a4888a83fb9c175b44168',
     polygons: 1882575,
-    labelDe: 'Touchscreen Comfort-Kabine (1.882.575 Polygone · 33 PBR-Materialien)',
-    labelSv: 'Touchscreen Comfort-Kupé (1 882 575 polygoner · 33 PBR-material)',
-    shortDe: '🖥️ Comfort (1,9M)',
-    shortSv: '🖥️ Comfort (1,9M)',
-  },
-  ev_lounge: {
-    uid: '8659ff4cb3f94ae1bd869503ce3e145a',
-    polygons: 1030132,
-    labelDe: 'EV Lounge-Cutaway (1.030.132 Polygone · 13 PBR-Materialien)',
-    labelSv: 'EV Lounge-Cutaway (1 030 132 polygoner · 13 PBR-material)',
-    shortDe: '⚡ EV-Lounge (1,0M)',
-    shortSv: '⚡ EV-Lounge (1,0M)',
+    labelDe: 'Sport-Carbon Touchscreen-Cockpit (1.882.575 Polygone · 33 PBR-Materialien)',
+    labelSv: 'Sport-Carbon Touchscreen-Cockpit (1 882 575 polygoner · 33 PBR-material)',
+    shortDe: '🏎️ Sport-Carbon (1,9M)',
+    shortSv: '🏎️ Sport-Carbon (1,9M)',
   },
 };
 
@@ -439,49 +431,54 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
         trimRgb: [number, number, number];
         stitchRgb: [number, number, number];
         albedoFactor: number;
+        leatherMetal: number;
         gloss: number;
         rough: number;
         trimMetal: number;
       }
     > = {
       anthracite: {
-        seatRgb: [0.052, 0.058, 0.068],
-        quiltRgb: [0.028, 0.032, 0.038],
+        seatRgb: [0.046, 0.049, 0.055],
+        quiltRgb: [0.025, 0.028, 0.032],
         trimRgb: [0.38, 0.41, 0.46],
-        stitchRgb: [0.26, 0.3, 0.36],
-        albedoFactor: 0.84,
-        gloss: 0.42,
-        rough: 0.58,
+        stitchRgb: [0.16, 0.18, 0.21],
+        albedoFactor: 0.9,
+        leatherMetal: 0.58,
+        gloss: 0.55,
+        rough: 0.54,
         trimMetal: 0.85,
       },
       'nappa-black': {
-        seatRgb: [0.02, 0.022, 0.026],
-        quiltRgb: [0.011, 0.012, 0.015],
+        seatRgb: [0.022, 0.023, 0.026],
+        quiltRgb: [0.012, 0.013, 0.016],
         trimRgb: [0.075, 0.082, 0.095],
-        stitchRgb: [0.38, 0.41, 0.45],
-        albedoFactor: 0.88,
-        gloss: 0.82,
-        rough: 0.24,
+        stitchRgb: [0.24, 0.26, 0.3],
+        albedoFactor: 0.92,
+        leatherMetal: 0.65,
+        gloss: 0.78,
+        rough: 0.46,
         trimMetal: 0.65,
       },
       cognac: {
         seatRgb: [0.179, 0.059, 0.018],
         quiltRgb: [0.054, 0.012, 0.002],
         trimRgb: [0.19, 0.095, 0.042],
-        stitchRgb: [0.46, 0.31, 0.18],
+        stitchRgb: [0.38, 0.22, 0.1],
         albedoFactor: 0.8,
+        leatherMetal: 0.28,
         gloss: 0.82,
-        rough: 0.28,
+        rough: 0.48,
         trimMetal: 0.35,
       },
       'nordic-beige': {
-        seatRgb: [0.31, 0.245, 0.175],
-        quiltRgb: [0.19, 0.145, 0.098],
-        trimRgb: [0.36, 0.29, 0.21],
-        stitchRgb: [0.44, 0.36, 0.26],
+        seatRgb: [0.29, 0.225, 0.16],
+        quiltRgb: [0.175, 0.132, 0.088],
+        trimRgb: [0.34, 0.27, 0.19],
+        stitchRgb: [0.36, 0.28, 0.2],
         albedoFactor: 0.74,
-        gloss: 0.74,
-        rough: 0.32,
+        leatherMetal: 0.22,
+        gloss: 0.72,
+        rough: 0.5,
         trimMetal: 0.45,
       },
     };
@@ -493,29 +490,49 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
     const [str, stg, stb] = cal.stitchRgb;
     const [ar, ag, ab] = hexToLinearRgb(ambHex);
 
-    const seatLeatherRegex = /seat_leather|^leather$|brown_plastic|brow_speaker_cover|seats_low|^plastic$/i;
-    const seatGridQuiltRegex = /seat_grid|^cloth/i;
-    const trimInlayRegex = /wiredrawing_aluminum|semi_silver_metal|semi_metal|gray_plastic|^silver$/i;
-    const stitchThreadRegex = /stich_line/i;
+    // Extract fine leather grain BumpMap texture from `seat_leather` or `leather` so center seat cushions (`03___Default`) also get real leather grain
+    let leatherBumpTex: any = null;
+    for (const m of materials) {
+      const n = String(m.name || '').toLowerCase();
+      if ((n === 'seat_leather' || n === 'leather') && m.channels?.BumpMap?.texture) {
+        leatherBumpTex = JSON.parse(JSON.stringify(m.channels.BumpMap.texture));
+        break;
+      }
+    }
+
+    const seatLeatherRegex = /seat_leather|^leather$|brown_plastic|brow_speaker_cover/i;
+    const seatGridQuiltRegex = /seat_grid|^03___default$/i;
+    const trimInlayRegex = /wiredrawing_aluminum|semi_silver_metal|semi_metal|gray_plastic/i;
+    // Both `stich_line_brown` (Executive 2.0M) and `line` (Sport-Carbon 1.9M) are physical contrast stitch threads on steering wheel, seats & gear boot
+    const stitchThreadRegex = /stich_line|^line$/i;
     const ambientLedRegex =
-      /round_blue_self|red_self|round_red_self|red_double|orange_self|red_slef|green_self|^line$|material0/i;
+      /round_blue_self|red_self|round_red_self|red_double|orange_self|red_slef|green_self|material0/i;
 
     // Preserves existing normal/bump/opacity/diffuse textures while updating PBR base color
-    const updateBaseColor = (ch: any, r: number, g: number, b: number, factor = 0.82) => {
+    const updateBaseColor = (ch: any, r: number, g: number, b: number, factor = 0.82, stripAlbedoTex = false) => {
       if (ch.AlbedoPBR) {
         ch.AlbedoPBR.enable = true;
         ch.AlbedoPBR.color = [r, g, b];
         ch.AlbedoPBR.factor = factor;
+        if (stripAlbedoTex && ch.AlbedoPBR.texture) {
+          delete ch.AlbedoPBR.texture;
+        }
       }
-      if (ch.DiffusePBR && !ch.DiffusePBR.texture) {
+      if (ch.DiffusePBR && (!ch.DiffusePBR.texture || stripAlbedoTex)) {
         ch.DiffusePBR.enable = true;
         ch.DiffusePBR.color = [r, g, b];
         ch.DiffusePBR.factor = factor;
+        if (stripAlbedoTex && ch.DiffusePBR.texture) {
+          delete ch.DiffusePBR.texture;
+        }
       }
-      if (ch.DiffuseColor && !ch.DiffuseColor.texture) {
+      if (ch.DiffuseColor && (!ch.DiffuseColor.texture || stripAlbedoTex)) {
         ch.DiffuseColor.enable = true;
         ch.DiffuseColor.color = [r, g, b];
         ch.DiffuseColor.factor = 1;
+        if (stripAlbedoTex && ch.DiffuseColor.texture) {
+          delete ch.DiffuseColor.texture;
+        }
       }
     };
 
@@ -534,44 +551,73 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
         }
         if (updated.channels.MetalnessPBR && !updated.channels.MetalnessPBR.texture) {
           updated.channels.MetalnessPBR.enable = true;
-          updated.channels.MetalnessPBR.factor = 0.04;
+          updated.channels.MetalnessPBR.factor = cal.leatherMetal;
         }
         if (updated.channels.SpecularF0 && !updated.channels.SpecularF0.texture) {
           updated.channels.SpecularF0.enable = true;
-          updated.channels.SpecularF0.factor = 0.28;
+          // Preserve low Fresnel F0 on RoughnessPBR leather (`leather` in Sport-Carbon) so dark leather never washes out to grey
+          updated.channels.SpecularF0.factor = updated.channels.RoughnessPBR?.enable ? 0.08 : 0.24;
         }
-        if (updated.channels.RoughnessPBR && !updated.channels.RoughnessPBR.texture) {
-          updated.channels.RoughnessPBR.enable = true;
-          updated.channels.RoughnessPBR.factor = cal.rough;
-        }
-        if (updated.channels.GlossinessPBR) {
-          updated.channels.GlossinessPBR.enable = true;
+        // Respect each material's native Sketchfab workflow (RoughnessPBR vs GlossinessPBR)
+        if (updated.channels.RoughnessPBR?.enable) {
+          if (!updated.channels.RoughnessPBR.texture) {
+            updated.channels.RoughnessPBR.factor = cal.rough;
+          }
+          if (updated.channels.GlossinessPBR) {
+            updated.channels.GlossinessPBR.enable = false;
+          }
+        } else if (updated.channels.GlossinessPBR?.enable) {
           updated.channels.GlossinessPBR.factor = cal.gloss;
         }
         if (updated.channels.BumpMap) {
           updated.channels.BumpMap.enable = true;
-          updated.channels.BumpMap.factor = 2.8;
+          updated.channels.BumpMap.factor = /^leather$/i.test(mName) ? 3.8 : 2.8;
         }
         api.setMaterial(updated);
       } else if (seatGridQuiltRegex.test(mName)) {
         const updated = JSON.parse(JSON.stringify(mat));
-        updateBaseColor(updated.channels, qr, qg, qb, cal.albedoFactor);
+        const isDefaultInsert = /^03___default$/i.test(mName);
+        // Strip the blotchy camo texture on `03___Default` in Sport-Carbon 1.9M and replace with fine-grained quilted/perforated leather
+        updateBaseColor(updated.channels, qr, qg, qb, cal.albedoFactor, isDefaultInsert);
         if (updated.channels.EmitColor) {
           updated.channels.EmitColor.enable = false;
           updated.channels.EmitColor.factor = 0;
         }
         if (updated.channels.MetalnessPBR && !updated.channels.MetalnessPBR.texture) {
           updated.channels.MetalnessPBR.enable = true;
-          updated.channels.MetalnessPBR.factor = 0.04;
+          updated.channels.MetalnessPBR.factor = isDefaultInsert ? cal.leatherMetal : 0.18;
+        }
+        if (isDefaultInsert) {
+          if (updated.channels.SpecularF0) {
+            updated.channels.SpecularF0.enable = true;
+            updated.channels.SpecularF0.factor = 0.08;
+          }
+          if (updated.channels.GlossinessPBR) {
+            updated.channels.GlossinessPBR.enable = true;
+            updated.channels.GlossinessPBR.factor = 0.38;
+          }
+          if (leatherBumpTex && updated.channels.BumpMap) {
+            updated.channels.BumpMap.enable = true;
+            updated.channels.BumpMap.factor = 3.2;
+            updated.channels.BumpMap.texture = leatherBumpTex;
+          }
         }
         api.setMaterial(updated);
       } else if (stitchThreadRegex.test(mName)) {
-        // Physical silk contrast stitching on steering wheel, seats & gear boot (not neon glowing)
+        // Physical silk contrast stitching on steering wheel, seats & gear boot (never glowing neon blue)
         const updated = JSON.parse(JSON.stringify(mat));
-        updateBaseColor(updated.channels, str, stg, stb, 0.9);
+        updateBaseColor(updated.channels, str, stg, stb, 0.85);
         if (updated.channels.EmitColor) {
           updated.channels.EmitColor.enable = false;
           updated.channels.EmitColor.factor = 0;
+        }
+        if (updated.channels.MetalnessPBR && !updated.channels.MetalnessPBR.texture) {
+          updated.channels.MetalnessPBR.enable = true;
+          updated.channels.MetalnessPBR.factor = 0.05;
+        }
+        if (updated.channels.SpecularF0 && !updated.channels.SpecularF0.texture) {
+          updated.channels.SpecularF0.enable = true;
+          updated.channels.SpecularF0.factor = 0.12;
         }
         api.setMaterial(updated);
       } else if (trimInlayRegex.test(mName)) {
@@ -678,16 +724,16 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
               });
             }
 
-            // Calibrate studio HDRI environment exposure so bright leathers & chrome never blow out
+            // Calibrate studio HDRI environment exposure (disable coarse outdoor directional shadow-map slices inside the cabin; SSAO provides smooth contact shadows)
             if (mode === 'interior' && typeof api.getEnvironment === 'function' && typeof api.setEnvironment === 'function') {
               api.getEnvironment((err: any, env: any) => {
                 if (!err && env) {
                   api.setEnvironment({
                     ...env,
                     enable: true,
-                    exposure: 1.08,
-                    lightIntensity: 1.9,
-                    shadowEnable: true,
+                    exposure: 1.05,
+                    lightIntensity: 1.85,
+                    shadowEnable: false,
                     blur: 0.08,
                   });
                 }
