@@ -223,6 +223,45 @@ export function getCarDimensions(car: FahrwertCar): CarDimensions {
 
 type CameraPreset = 'front34' | 'side' | 'rear34' | 'top';
 type InteriorCamPreset = 'driver' | 'lounge' | 'top';
+type InteriorCadVariantId = 'executive' | 'comfort' | 'ev_lounge';
+
+const INTERIOR_CAD_MODELS: Record<
+  InteriorCadVariantId,
+  { uid: string; polygons: number; labelDe: string; labelSv: string; shortDe: string; shortSv: string }
+> = {
+  executive: {
+    uid: 'c9df17ad5d3a4329a2d8efd7ace33baa',
+    polygons: 2025270,
+    labelDe: 'Executive Digital-Cockpit (2.025.270 Polygone · 35 PBR-Materialien)',
+    labelSv: 'Executive Digital-Cockpit (2 025 270 polygoner · 35 PBR-material)',
+    shortDe: '🎛️ Executive (2,0M)',
+    shortSv: '🎛️ Executive (2,0M)',
+  },
+  comfort: {
+    uid: '1a35e1e2c88a4888a83fb9c175b44168',
+    polygons: 1882575,
+    labelDe: 'Touchscreen Comfort-Kabine (1.882.575 Polygone · 33 PBR-Materialien)',
+    labelSv: 'Touchscreen Comfort-Kupé (1 882 575 polygoner · 33 PBR-material)',
+    shortDe: '🖥️ Comfort (1,9M)',
+    shortSv: '🖥️ Comfort (1,9M)',
+  },
+  ev_lounge: {
+    uid: '8659ff4cb3f94ae1bd869503ce3e145a',
+    polygons: 1030132,
+    labelDe: 'EV Lounge-Cutaway (1.030.132 Polygone · 13 PBR-Materialien)',
+    labelSv: 'EV Lounge-Cutaway (1 030 132 polygoner · 13 PBR-material)',
+    shortDe: '⚡ EV-Lounge (1,0M)',
+    shortSv: '⚡ EV-Lounge (1,0M)',
+  },
+};
+
+function getDefaultInteriorVariant(car: FahrwertCar): InteriorCadVariantId {
+  const b = car.brand.toLowerCase();
+  if (b.includes('hyundai') || b.includes('kia') || b.includes('toyota') || b.includes('mg') || b.includes('mazda')) {
+    return 'comfort';
+  }
+  return 'executive';
+}
 
 interface Car3DStudioProps {
   car: FahrwertCar;
@@ -252,11 +291,14 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
   const [mode, setMode] = useState<Studio3DMode>(() =>
     initialMode ? initialMode : initialXray ? 'xray' : 'cad'
   );
+  const [interiorVariant, setInteriorVariant] = useState<InteriorCadVariantId>(() =>
+    getDefaultInteriorVariant(car)
+  );
   const [showDims, setShowDims] = useState<boolean>(false);
   const [autoRotate, setAutoRotate] = useState<boolean>(true);
   const [paintId, setPaintId] = useState<string>('factory');
   const [camPreset, setCamPreset] = useState<CameraPreset>('front34');
-  const [intCamPreset, setIntCamPreset] = useState<InteriorCamPreset>('driver');
+  const [intCamPreset, setIntCamPreset] = useState<InteriorCamPreset>('lounge');
   const [ambientHex, setAmbientHex] = useState<string>('#38BDF8');
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [cadLoaded, setCadLoaded] = useState<boolean>(false);
@@ -266,6 +308,16 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
   const sfInitialCamRef = useRef<{ position: [number, number, number]; target: [number, number, number] } | null>(
     null
   );
+  const selectedInteriorRef = useRef<InteriorPackageId>(selectedInterior);
+  const ambientHexRef = useRef<string>(ambientHex);
+
+  useEffect(() => {
+    selectedInteriorRef.current = selectedInterior;
+  }, [selectedInterior]);
+
+  useEffect(() => {
+    ambientHexRef.current = ambientHex;
+  }, [ambientHex]);
 
   useEffect(() => {
     if (initialMode) {
@@ -287,6 +339,7 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
     setCadLoaded(false);
     setPaintId('factory');
     setCamPreset('front34');
+    setInteriorVariant(getDefaultInteriorVariant(car));
     sfApiRef.current = null;
     sfMaterialsRef.current = [];
     sfInitialCamRef.current = null;
@@ -303,12 +356,14 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
     [car.id, car.brand, car.model]
   );
 
+  const interiorCadModel = useMemo(() => INTERIOR_CAD_MODELS[interiorVariant], [interiorVariant]);
+
   const activeInteriorPkg = useMemo(
     () => INTERIOR_PACKAGES.find((p) => p.id === selectedInterior) || INTERIOR_PACKAGES[0],
     [selectedInterior]
   );
 
-  // Helper to apply metallic car paint to the 3D CAD model via Sketchfab Viewer API
+  // Helper to apply metallic car paint to the Exterior 3D CAD model via Sketchfab Viewer API
   const applyCadPaint = useCallback((targetPaintId: string) => {
     const api = sfApiRef.current;
     const materials = sfMaterialsRef.current;
@@ -369,27 +424,118 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
     });
   }, []);
 
-  // Initialize Sketchfab Viewer JS API when in 3D-CAD mode (`mode === 'cad'`)
+  // Helper to apply live Leather Upholstery, Dashboard Trim & 64-color Ambient LED to the 2.0M-polygon 3D Interior CAD model
+  const applyInteriorCadMaterials = useCallback((intPkgId: InteriorPackageId, ambHex: string) => {
+    const api = sfApiRef.current;
+    const materials = sfMaterialsRef.current;
+    if (!api || !materials.length) return;
+
+    const pkg = INTERIOR_PACKAGES.find((p) => p.id === intPkgId) || INTERIOR_PACKAGES[0];
+    const [sr, sg, sb] = hexToLinearRgb(pkg.seatHex);
+    const [tr, tg, tb] = hexToLinearRgb(pkg.trimHex);
+    const [ar, ag, ab] = hexToLinearRgb(ambHex);
+
+    const seatLeatherRegex = /seat_leather|^leather$|brown_plastic|brow_speaker_cover|seats_low|^plastic$/i;
+    const seatGridQuiltRegex = /seat_grid|^cloth/i;
+    const trimInlayRegex = /wiredrawing_aluminum|semi_silver_metal|semi_metal|gray_plastic|^silver$/i;
+    const ambientLedRegex =
+      /round_blue_self|red_self|round_red_self|red_double|orange_self|red_slef|green_self|stich_line|^line$|material0/i;
+
+    const setChannelRgb = (chObj: any, r: number, g: number, b: number) => {
+      if (!chObj) return;
+      chObj.enable = true;
+      chObj.color = [r, g, b];
+      chObj.factor = 1;
+    };
+
+    materials.forEach((mat) => {
+      const mName = String(mat.name || '');
+      const ch = mat.channels;
+      if (!ch) return;
+
+      if (seatLeatherRegex.test(mName)) {
+        const updated = JSON.parse(JSON.stringify(mat));
+        setChannelRgb(updated.channels.AlbedoPBR, sr, sg, sb);
+        setChannelRgb(updated.channels.DiffusePBR, sr, sg, sb);
+        setChannelRgb(updated.channels.DiffuseColor, sr, sg, sb);
+        if (updated.channels.EmitColor) {
+          updated.channels.EmitColor.enable = true;
+          updated.channels.EmitColor.color = [sr * 0.14, sg * 0.14, sb * 0.14];
+          updated.channels.EmitColor.factor = 1;
+        }
+        if (updated.channels.RoughnessPBR) {
+          updated.channels.RoughnessPBR.enable = true;
+          updated.channels.RoughnessPBR.factor = intPkgId === 'nappa-black' ? 0.25 : 0.38;
+        }
+        api.setMaterial(updated);
+      } else if (seatGridQuiltRegex.test(mName)) {
+        const updated = JSON.parse(JSON.stringify(mat));
+        const qr = sr * 0.68;
+        const qg = sg * 0.68;
+        const qb = sb * 0.68;
+        setChannelRgb(updated.channels.AlbedoPBR, qr, qg, qb);
+        setChannelRgb(updated.channels.DiffusePBR, qr, qg, qb);
+        setChannelRgb(updated.channels.DiffuseColor, qr, qg, qb);
+        if (updated.channels.EmitColor) {
+          updated.channels.EmitColor.enable = true;
+          updated.channels.EmitColor.color = [qr * 0.12, qg * 0.12, qb * 0.12];
+          updated.channels.EmitColor.factor = 1;
+        }
+        api.setMaterial(updated);
+      } else if (trimInlayRegex.test(mName)) {
+        const updated = JSON.parse(JSON.stringify(mat));
+        setChannelRgb(updated.channels.AlbedoPBR, tr, tg, tb);
+        setChannelRgb(updated.channels.DiffusePBR, tr, tg, tb);
+        setChannelRgb(updated.channels.DiffuseColor, tr, tg, tb);
+        if (updated.channels.EmitColor) {
+          updated.channels.EmitColor.enable = true;
+          updated.channels.EmitColor.color = [tr * 0.16, tg * 0.16, tb * 0.16];
+          updated.channels.EmitColor.factor = 1;
+        }
+        api.setMaterial(updated);
+      } else if (ambientLedRegex.test(mName)) {
+        const updated = JSON.parse(JSON.stringify(mat));
+        setChannelRgb(updated.channels.AlbedoPBR, ar, ag, ab);
+        setChannelRgb(updated.channels.DiffusePBR, ar, ag, ab);
+        setChannelRgb(updated.channels.DiffuseColor, ar, ag, ab);
+        if (updated.channels.EmitColor) {
+          updated.channels.EmitColor.enable = true;
+          updated.channels.EmitColor.color = [ar, ag, ab];
+          updated.channels.EmitColor.factor = 0.95;
+        }
+        api.setMaterial(updated);
+      }
+    });
+  }, []);
+
+  const activeSketchfabUid = mode === 'interior' ? interiorCadModel.uid : cadModel.uid;
+
+  // Initialize Sketchfab Viewer JS API for BOTH 3D Exterior (`cad`) AND 2.0M-polygon 3D Interior (`interior`)
   useEffect(() => {
-    if (mode !== 'cad') return;
+    if (mode !== 'cad' && mode !== 'interior') return;
     const iframeEl = cadIframeRef.current;
     if (!iframeEl) return;
 
     let cancelled = false;
+    setCadLoaded(false);
+    sfApiRef.current = null;
+    sfMaterialsRef.current = [];
+    sfInitialCamRef.current = null;
 
     const initViewer = () => {
       if (cancelled || !cadIframeRef.current) return;
       const SketchfabCtor = (window as any).Sketchfab;
+      const spinSpeed = mode === 'interior' ? 0.03 : 0.12;
       if (!SketchfabCtor) {
-        cadIframeRef.current.src = `https://sketchfab.com/models/${cadModel.uid}/embed?autostart=1&preload=1&ui_theme=dark&dnt=1&autospin=0.12&ui_infos=0&ui_watermark=0&ui_stop=0&ui_inspector=0&ui_settings=0&ui_vr=0&ui_help=0&ui_annotations=0`;
+        cadIframeRef.current.src = `https://sketchfab.com/models/${activeSketchfabUid}/embed?autostart=1&preload=1&ui_theme=dark&dnt=1&autospin=${spinSpeed}&ui_infos=0&ui_watermark=0&ui_stop=0&ui_inspector=0&ui_settings=0&ui_vr=0&ui_help=0&ui_annotations=0`;
         return;
       }
 
       const client = new SketchfabCtor('1.12.1', cadIframeRef.current);
-      client.init(cadModel.uid, {
+      client.init(activeSketchfabUid, {
         autostart: 1,
         preload: 1,
-        autospin: 0.12,
+        autospin: spinSpeed,
         ui_theme: 'dark',
         ui_infos: 0,
         ui_watermark: 0,
@@ -430,18 +576,22 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
               api.getMaterialList((err: any, mats: any[]) => {
                 if (!err && Array.isArray(mats)) {
                   sfMaterialsRef.current = mats;
-                  const bodyRegex = /carpaint|paint|body|carroceria|coat|lack/i;
-                  mats.forEach((m) => {
-                    if (bodyRegex.test(m.name || '') && m.channels?.ClearCoat) {
-                      const enhanced = JSON.parse(JSON.stringify(m));
-                      enhanced.channels.ClearCoat.enable = true;
-                      enhanced.channels.ClearCoat.factor = 1.0;
-                      if (enhanced.channels.ClearCoatRoughness) {
-                        enhanced.channels.ClearCoatRoughness.factor = 0.04;
+                  if (mode === 'interior') {
+                    applyInteriorCadMaterials(selectedInteriorRef.current, ambientHexRef.current);
+                  } else {
+                    const bodyRegex = /carpaint|paint|body|carroceria|coat|lack/i;
+                    mats.forEach((m) => {
+                      if (bodyRegex.test(m.name || '') && m.channels?.ClearCoat) {
+                        const enhanced = JSON.parse(JSON.stringify(m));
+                        enhanced.channels.ClearCoat.enable = true;
+                        enhanced.channels.ClearCoat.factor = 1.0;
+                        if (enhanced.channels.ClearCoatRoughness) {
+                          enhanced.channels.ClearCoatRoughness.factor = 0.04;
+                        }
+                        api.setMaterial(enhanced);
                       }
-                      api.setMaterial(enhanced);
-                    }
-                  });
+                    });
+                  }
                 }
               });
             }
@@ -466,449 +616,22 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [cadModel.uid, mode, pal.id]);
+  }, [activeSketchfabUid, mode, pal.id, applyInteriorCadMaterials]);
 
-  // Store refs to Three.js objects for Interior & X-Ray modes
+  // Live reactive updates for 2.0M-polygon 3D Interior Upholstery & Ambient Lighting via Sketchfab API
+  useEffect(() => {
+    if (mode !== 'interior') return;
+    applyInteriorCadMaterials(selectedInterior, ambientHex);
+  }, [mode, selectedInterior, ambientHex, applyInteriorCadMaterials]);
+
+  // Store refs to Three.js objects for X-Ray mode
   const sceneRefs = useRef<{
     dimsGroup?: THREE.Group;
     controls?: OrbitControls;
     camera?: THREE.PerspectiveCamera;
     wheels?: THREE.Object3D[];
     energyParticles?: THREE.Points;
-    seatMat?: THREE.MeshStandardMaterial;
-    trimMat?: THREE.MeshStandardMaterial;
-    ambientMat?: THREE.MeshStandardMaterial;
-    ambientLightObj?: THREE.PointLight;
   }>({});
-
-  // ==========================================================================
-  // MODE 2: INTERACTIVE 360° 3D-INTERIÖR & COCKPIT LOUNGE STAGE
-  // ==========================================================================
-  useEffect(() => {
-    if (mode !== 'interior') return;
-    const mount = mountRef.current;
-    if (!mount) return;
-
-    const width = mount.clientWidth || 640;
-    const height = mount.clientHeight || 400;
-
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color('#090D14');
-    scene.fog = new THREE.Fog('#090D14', 5.5, 14);
-
-    const camera = new THREE.PerspectiveCamera(44, width / height, 0.05, 50);
-    // Default 'driver' cockpit over-the-shoulder perspective looking at steering wheel, OLED screens & AR-HUD
-    camera.position.set(-0.22, 1.18, 0.24);
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-    renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.shadowMap.enabled = true;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.3;
-
-    mount.innerHTML = '';
-    mount.appendChild(renderer.domElement);
-
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.06;
-    controls.target.set(0.55, 0.86, 0.0);
-    controls.minDistance = 0.35;
-    controls.maxDistance = 4.2;
-    controls.maxPolarAngle = Math.PI / 2 + 0.15;
-    controls.autoRotate = false;
-
-    const hemi = new THREE.HemisphereLight(0xdbeafe, 0x0f172a, 1.25);
-    scene.add(hemi);
-
-    const keyLight = new THREE.DirectionalLight(0xfffbeb, 1.9);
-    keyLight.position.set(2.5, 4.5, 2.5);
-    keyLight.castShadow = true;
-    scene.add(keyLight);
-
-    const cabinAmbientPoint = new THREE.PointLight(new THREE.Color(ambientHex), 2.2, 3.2);
-    cabinAmbientPoint.position.set(0.35, 0.95, 0);
-    scene.add(cabinAmbientPoint);
-
-    const cabinRoot = new THREE.Group();
-    scene.add(cabinRoot);
-
-    const hasHud = selectedOptions.includes('hud_matrix');
-    const hasPano = selectedOptions.includes('pano');
-    const hasAudio = selectedOptions.includes('audio');
-
-    // Materials
-    const seatMat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(activeInteriorPkg.seatHex),
-      roughness: 0.42,
-      metalness: 0.08,
-    });
-    const trimMat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(activeInteriorPkg.trimHex),
-      roughness: 0.28,
-      metalness: 0.35,
-    });
-    const dashSoftMat = new THREE.MeshStandardMaterial({
-      color: 0x161920,
-      roughness: 0.65,
-      metalness: 0.1,
-    });
-    const carpetMat = new THREE.MeshStandardMaterial({
-      color: 0x101318,
-      roughness: 0.9,
-    });
-    const chromeMat = new THREE.MeshStandardMaterial({
-      color: 0xe2e8f0,
-      roughness: 0.18,
-      metalness: 0.88,
-    });
-    const ambientMat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(ambientHex),
-      emissive: new THREE.Color(ambientHex),
-      emissiveIntensity: 2.2,
-    });
-
-    // 1. Cabin Floor & Center Tunnel
-    const floorMesh = new THREE.Mesh(new THREE.BoxGeometry(2.65, 0.06, 1.68), carpetMat);
-    floorMesh.position.set(0, 0.22, 0);
-    floorMesh.receiveShadow = true;
-    cabinRoot.add(floorMesh);
-
-    // Subtle studio grid below floor
-    const grid = new THREE.GridHelper(6, 16, 0x1e293b, 0x0f172a);
-    grid.position.y = 0.18;
-    scene.add(grid);
-
-    // 2. Sculpted Two-Tier Dashboard & Wing
-    const dashMain = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.32, 1.58), dashSoftMat);
-    dashMain.position.set(0.88, 0.78, 0);
-    cabinRoot.add(dashMain);
-
-    // Decorative Wood / Carbon / Brushed Aluminum Trim Inlay across dashboard
-    const dashTrim = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.075, 1.54), trimMat);
-    dashTrim.position.set(0.65, 0.82, 0);
-    cabinRoot.add(dashTrim);
-
-    // Glowing Ambient LED Strip along dashboard & doors
-    const dashLed = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.014, 1.54), ambientMat);
-    dashLed.position.set(0.64, 0.775, 0);
-    cabinRoot.add(dashLed);
-
-    [-0.78, 0.78].forEach((zDoor) => {
-      // Door inner card silhouette
-      const doorCard = new THREE.Mesh(new THREE.BoxGeometry(1.85, 0.56, 0.05), dashSoftMat);
-      doorCard.position.set(0.05, 0.54, zDoor);
-      cabinRoot.add(doorCard);
-
-      const doorTrim = new THREE.Mesh(new THREE.BoxGeometry(1.65, 0.05, 0.06), trimMat);
-      doorTrim.position.set(0.08, 0.68, zDoor);
-      cabinRoot.add(doorTrim);
-
-      const doorLed = new THREE.Mesh(new THREE.BoxGeometry(1.65, 0.012, 0.065), ambientMat);
-      doorLed.position.set(0.08, 0.645, zDoor);
-      cabinRoot.add(doorLed);
-
-      // High-End Audio Illuminated Speaker Grilles on Doors
-      if (hasAudio) {
-        const spkGeo = new THREE.CylinderGeometry(0.085, 0.085, 0.065, 24);
-        spkGeo.rotateX(Math.PI / 2);
-        const spk = new THREE.Mesh(spkGeo, chromeMat);
-        spk.position.set(0.48, 0.46, zDoor);
-        cabinRoot.add(spk);
-      }
-    });
-
-    // High-End Audio Center-Dash Acoustic Lens Tweeter
-    if (hasAudio) {
-      const centerTweeter = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.07, 0.09, 0.05, 24),
-        chromeMat
-      );
-      centerTweeter.position.set(0.84, 0.96, 0);
-      cabinRoot.add(centerTweeter);
-    }
-
-    // 3. Digital Driver Cockpit Cluster + 15" Curved Central OLED Infotainment Screen
-    const clusterBezel = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.16, 0.34), dashSoftMat);
-    clusterBezel.position.set(0.64, 0.93, -0.36);
-    clusterBezel.rotation.z = -0.14;
-    cabinRoot.add(clusterBezel);
-
-    const clusterScreen = new THREE.Mesh(
-      new THREE.BoxGeometry(0.015, 0.14, 0.32),
-      new THREE.MeshBasicMaterial({ color: 0x0ea5e9 })
-    );
-    clusterScreen.position.set(0.63, 0.93, -0.36);
-    clusterScreen.rotation.z = -0.14;
-    cabinRoot.add(clusterScreen);
-
-    // Speedometer arc inside driver cluster
-    const gaugeRing = new THREE.Mesh(
-      new THREE.RingGeometry(0.035, 0.048, 32),
-      new THREE.MeshBasicMaterial({ color: 0x34d399, side: THREE.DoubleSide })
-    );
-    gaugeRing.rotation.y = -Math.PI / 2;
-    gaugeRing.position.set(0.618, 0.93, -0.36);
-    cabinRoot.add(gaugeRing);
-
-    // Central 15" OLED Infotainment Display (slightly angled toward driver)
-    const centerDisplayGroup = new THREE.Group();
-    centerDisplayGroup.position.set(0.61, 0.91, 0.02);
-    centerDisplayGroup.rotation.y = -0.12;
-    centerDisplayGroup.rotation.z = -0.1;
-
-    const oledFrame = new THREE.Mesh(new THREE.BoxGeometry(0.025, 0.24, 0.38), chromeMat);
-    centerDisplayGroup.add(oledFrame);
-
-    const oledScreen = new THREE.Mesh(
-      new THREE.BoxGeometry(0.015, 0.22, 0.36),
-      new THREE.MeshBasicMaterial({ color: 0x0f172a })
-    );
-    oledScreen.position.x = -0.008;
-    centerDisplayGroup.add(oledScreen);
-
-    // Navigation route & UI widgets on OLED screen
-    const navMap = new THREE.Mesh(
-      new THREE.BoxGeometry(0.01, 0.14, 0.22),
-      new THREE.MeshBasicMaterial({ color: 0x0284c7 })
-    );
-    navMap.position.set(-0.014, 0.02, 0.05);
-    centerDisplayGroup.add(navMap);
-
-    const socWidget = new THREE.Mesh(
-      new THREE.BoxGeometry(0.01, 0.14, 0.1),
-      new THREE.MeshBasicMaterial({ color: 0x10b981 })
-    );
-    socWidget.position.set(-0.014, 0.02, -0.12);
-    centerDisplayGroup.add(socWidget);
-
-    cabinRoot.add(centerDisplayGroup);
-
-    // 4. Multi-Function Steering Wheel (Left-Hand Drive: z = -0.36)
-    const steeringGroup = new THREE.Group();
-    steeringGroup.position.set(0.46, 0.86, -0.36);
-    steeringGroup.rotation.z = -0.32;
-
-    const column = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.045, 0.24, 16), dashSoftMat);
-    column.rotation.z = Math.PI / 2;
-    column.position.x = 0.11;
-    steeringGroup.add(column);
-
-    const rimTorus = new THREE.Mesh(new THREE.TorusGeometry(0.165, 0.022, 16, 48), seatMat);
-    rimTorus.rotation.y = Math.PI / 2;
-    steeringGroup.add(rimTorus);
-
-    const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.058, 0.035, 24), seatMat);
-    hub.rotation.z = Math.PI / 2;
-    steeringGroup.add(hub);
-
-    // 3 Metallic Steering Spokes
-    [0, Math.PI * 0.62, -Math.PI * 0.62].forEach((ang) => {
-      const spk = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.14, 0.024), chromeMat);
-      spk.rotation.x = ang;
-      spk.position.set(0, -Math.cos(ang) * 0.07, Math.sin(ang) * 0.07);
-      steeringGroup.add(spk);
-    });
-
-    cabinRoot.add(steeringGroup);
-
-    // 5. Floating Center Console Bridge & Armrest
-    const consoleBridge = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.16, 0.26), trimMat);
-    consoleBridge.position.set(0.28, 0.52, 0);
-    cabinRoot.add(consoleBridge);
-
-    const consoleLed = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.012, 0.27), ambientMat);
-    consoleLed.position.set(0.28, 0.44, 0);
-    cabinRoot.add(consoleLed);
-
-    const armrest = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.12, 0.24), seatMat);
-    armrest.position.set(-0.02, 0.62, 0);
-    cabinRoot.add(armrest);
-
-    // 6. 4 Ergonomic Quilted Contour Seats (2 Front Bucket Seats + 2/3 Rear Lounge Seats)
-    const buildContourSeat = (xPos: number, zPos: number, isFront: boolean) => {
-      const sg = new THREE.Group();
-      sg.position.set(xPos, 0.34, zPos);
-
-      // Seat cushion base
-      const cushion = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.11, 0.48), seatMat);
-      cushion.castShadow = true;
-      sg.add(cushion);
-
-      // Left & right thigh bolsters
-      [-0.22, 0.22].forEach((bz) => {
-        const bolster = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.14, 0.07), seatMat);
-        bolster.position.set(0, 0.03, bz);
-        sg.add(bolster);
-      });
-
-      // Quilted Backrest
-      const backrestGroup = new THREE.Group();
-      backrestGroup.position.set(-0.2, 0.06, 0);
-      backrestGroup.rotation.z = 0.22;
-
-      const backMain = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.58, 0.46), seatMat);
-      backMain.position.set(0, 0.28, 0);
-      backMain.castShadow = true;
-      backrestGroup.add(backMain);
-
-      // Shoulder bolsters
-      [-0.21, 0.21].forEach((bz) => {
-        const sBolster = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.52, 0.07), seatMat);
-        sBolster.position.set(0.02, 0.26, bz);
-        backrestGroup.add(sBolster);
-      });
-
-      // Horizontal quilted ribs
-      for (let q = 0; q < 4; q++) {
-        const rib = new THREE.Mesh(new THREE.BoxGeometry(0.112, 0.06, 0.34), seatMat);
-        rib.position.set(0.008, 0.12 + q * 0.11, 0);
-        backrestGroup.add(rib);
-      }
-
-      // Integrated Headrest with Chrome Collar
-      const collar = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.03, 0.16), chromeMat);
-      collar.position.set(0, 0.59, 0);
-      backrestGroup.add(collar);
-
-      const headrest = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.19, 0.24), seatMat);
-      headrest.position.set(0.01, 0.69, 0);
-      backrestGroup.add(headrest);
-
-      sg.add(backrestGroup);
-      if (!isFront) {
-        sg.scale.set(0.95, 0.95, 0.95);
-      }
-      cabinRoot.add(sg);
-    };
-
-    // Front Driver & Passenger Seats
-    buildContourSeat(0.12, -0.38, true);
-    buildContourSeat(0.12, 0.38, true);
-    // Rear Lounge Seats
-    buildContourSeat(-0.68, -0.38, false);
-    buildContourSeat(-0.68, 0.38, false);
-    // Rear center bench bridge
-    const rearCenter = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.1, 0.32), seatMat);
-    rearCenter.position.set(-0.68, 0.33, 0);
-    cabinRoot.add(rearCenter);
-
-    // 7. Windshield & Optional AR Head-Up Display Projection (`hud_matrix`)
-    const windshield = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.75, 1.54),
-      new THREE.MeshPhysicalMaterial({
-        color: 0x38bdf8,
-        transparent: true,
-        opacity: 0.12,
-        roughness: 0.05,
-        side: THREE.DoubleSide,
-      })
-    );
-    windshield.position.set(0.88, 1.18, 0);
-    windshield.rotation.y = Math.PI / 2;
-    windshield.rotation.z = -0.58;
-    cabinRoot.add(windshield);
-
-    if (hasHud) {
-      const hudPlane = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.16, 0.32),
-        new THREE.MeshBasicMaterial({
-          color: 0x34d399,
-          transparent: true,
-          opacity: 0.85,
-          side: THREE.DoubleSide,
-        })
-      );
-      hudPlane.position.set(0.82, 1.08, -0.36);
-      hudPlane.rotation.y = Math.PI / 2;
-      hudPlane.rotation.z = -0.58;
-      cabinRoot.add(hudPlane);
-    }
-
-    // 8. Optional Panorama-Glasdach (`pano`) Frame above Cabin
-    if (hasPano) {
-      const panoGlass = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.45, 1.28),
-        new THREE.MeshPhysicalMaterial({
-          color: 0x0284c7,
-          transparent: true,
-          opacity: 0.22,
-          side: THREE.DoubleSide,
-        })
-      );
-      panoGlass.rotation.x = Math.PI / 2;
-      panoGlass.position.set(-0.15, 1.42, 0);
-      cabinRoot.add(panoGlass);
-
-      const panoFrame = new THREE.LineSegments(
-        new THREE.EdgesGeometry(new THREE.BoxGeometry(1.46, 0.015, 1.29)),
-        new THREE.LineBasicMaterial({ color: 0x38bdf8 })
-      );
-      panoFrame.position.set(-0.15, 1.42, 0);
-      cabinRoot.add(panoFrame);
-    }
-
-    sceneRefs.current = {
-      controls,
-      camera,
-      seatMat,
-      trimMat,
-      ambientMat,
-      ambientLightObj: cabinAmbientPoint,
-    };
-
-    let reqId = 0;
-    const animate = () => {
-      reqId = requestAnimationFrame(animate);
-      controls.update();
-      renderer.render(scene, camera);
-    };
-    animate();
-
-    const ro = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (!entry) return;
-      const nw = entry.contentRect.width;
-      const nh = entry.contentRect.height;
-      if (nw > 0 && nh > 0) {
-        camera.aspect = nw / nh;
-        camera.updateProjectionMatrix();
-        renderer.setSize(nw, nh);
-      }
-    });
-    ro.observe(mount);
-
-    return () => {
-      cancelAnimationFrame(reqId);
-      ro.disconnect();
-      controls.dispose();
-      renderer.dispose();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [car.id, mode, selectedOptions.join(',')]);
-
-  // Live reactive updates for Interior Upholstery & Ambient Lighting without rebuilding WebGL scene
-  useEffect(() => {
-    if (mode !== 'interior') return;
-    const r = sceneRefs.current;
-    if (r.seatMat) {
-      r.seatMat.color.set(activeInteriorPkg.seatHex);
-      r.seatMat.needsUpdate = true;
-    }
-    if (r.trimMat) {
-      r.trimMat.color.set(activeInteriorPkg.trimHex);
-      r.trimMat.needsUpdate = true;
-    }
-    if (r.ambientMat) {
-      r.ambientMat.color.set(ambientHex);
-      r.ambientMat.emissive.set(ambientHex);
-      r.ambientMat.needsUpdate = true;
-    }
-    if (r.ambientLightObj) {
-      r.ambientLightObj.color.set(ambientHex);
-    }
-  }, [mode, activeInteriorPkg, ambientHex]);
 
   // ==========================================================================
   // MODE 3: INTERACTIVE THREE.JS HOLOGRAPHIC X-RAY DRIVETRAIN STAGE
@@ -1411,20 +1134,36 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
 
   const applyInteriorCamPreset = (preset: InteriorCamPreset) => {
     setIntCamPreset(preset);
-    const cam = sceneRefs.current.camera;
-    const ctrl = sceneRefs.current.controls;
-    if (!cam || !ctrl) return;
-    if (preset === 'driver') {
-      cam.position.set(-0.22, 1.18, 0.24);
-      ctrl.target.set(0.55, 0.86, 0.0);
-    } else if (preset === 'lounge') {
-      cam.position.set(-0.95, 1.48, 1.45);
-      ctrl.target.set(0.05, 0.65, 0.0);
-    } else if (preset === 'top') {
-      cam.position.set(-0.1, 2.55, 0.15);
-      ctrl.target.set(0.0, 0.55, 0.0);
+    const api = sfApiRef.current;
+    const initCam = sfInitialCamRef.current;
+    if (api && initCam && typeof api.setCameraLookAt === 'function') {
+      const [tx, ty, tz] = initCam.target;
+      const [px, py, pz] = initCam.position;
+      const dx = px - tx;
+      const dy = py - ty;
+      const dz = pz - tz;
+      const horizR = Math.max(0.1, Math.hypot(dx, dy));
+      const baseAngle = Math.atan2(dy, dx);
+
+      let newPos: [number, number, number] = [px, py, pz];
+      if (preset === 'driver') {
+        const ang = baseAngle - 0.16;
+        newPos = [
+          tx + Math.cos(ang) * horizR * 0.62,
+          ty + Math.sin(ang) * horizR * 0.62,
+          tz + dz * 0.54,
+        ];
+      } else if (preset === 'lounge') {
+        newPos = [px, py, pz];
+      } else if (preset === 'top') {
+        newPos = [
+          tx + Math.cos(baseAngle) * horizR * 0.35,
+          ty + Math.sin(baseAngle) * horizR * 0.35,
+          tz + horizR * 1.32,
+        ];
+      }
+      api.setCameraLookAt(newPos, initCam.target, 0.75);
     }
-    ctrl.update();
   };
 
   const handleSelectPaint = (id: string) => {
@@ -1466,8 +1205,8 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
         userSelect: 'none',
       }}
     >
-      {/* MODE 1: REAL HIGH-POLYGON 3D CAD MODEL VIEWER */}
-      {mode === 'cad' && (
+      {/* MODE 1 & MODE 2: REAL HIGH-POLYGON SKETCHFAB 3D EXTERIOR CAD OR 2.0M-POLYGON 3D INTERIOR COCKPIT */}
+      {(mode === 'cad' || mode === 'interior') && (
         <div
           style={{
             position: 'relative',
@@ -1498,24 +1237,61 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
                   fontSize: 12,
                   fontWeight: 700,
                   letterSpacing: '0.06em',
-                  color: '#38BDF8',
+                  color: mode === 'interior' ? '#F59E0B' : '#38BDF8',
                   textTransform: 'uppercase',
                 }}
               >
-                {lang === 'sv'
-                  ? `Laddar 3D-Showroom (${cadModel.polygons.toLocaleString('de-AT')} polygoner)…`
-                  : `Lade 3D-Showroom (${cadModel.polygons.toLocaleString('de-AT')} Polygone)…`}
+                {mode === 'interior'
+                  ? lang === 'sv'
+                    ? `Laddar 3D-Cockpit (${interiorCadModel.polygons.toLocaleString('de-AT')} polygoner)…`
+                    : `Lade 3D-Cockpit (${interiorCadModel.polygons.toLocaleString('de-AT')} Polygone)…`
+                  : lang === 'sv'
+                    ? `Laddar 3D-Showroom (${cadModel.polygons.toLocaleString('de-AT')} polygoner)…`
+                    : `Lade 3D-Showroom (${cadModel.polygons.toLocaleString('de-AT')} Polygone)…`}
               </div>
               <div style={{ fontSize: 11, opacity: 0.72 }}>
-                {car.brand} {car.model} · 360° WebGL Studio
+                {mode === 'interior'
+                  ? lang === 'sv'
+                    ? interiorCadModel.labelSv
+                    : interiorCadModel.labelDe
+                  : `${car.brand} ${car.model} · 360° WebGL Studio`}
               </div>
             </div>
           )}
 
+          {/* Optional Holographic AR Head-Up Display Overlay when `hud_matrix` is selected in Interior mode */}
+          {mode === 'interior' && selectedOptions.includes('hud_matrix') && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 72,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                padding: '6px 14px',
+                borderRadius: 10,
+                background: 'rgba(6, 28, 36, 0.72)',
+                border: '1px solid rgba(56, 189, 248, 0.55)',
+                boxShadow: '0 0 22px rgba(56, 189, 248, 0.25)',
+                backdropFilter: 'blur(6px)',
+                color: '#38BDF8',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 14,
+                zIndex: 4,
+                pointerEvents: 'none',
+                fontVariantNumeric: 'tabular-nums',
+              }}
+            >
+              <span style={{ fontSize: 16, fontWeight: 800, color: '#34D399' }}>98 km/h</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#E2E8F0' }}>ACC 100</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#38BDF8' }}>↱ 250 m · AR-HUD</span>
+            </div>
+          )}
+
           <iframe
-            key={cadModel.uid}
+            key={`${mode}-${activeSketchfabUid}`}
             ref={cadIframeRef}
-            title={`${car.brand} ${car.model} 3D CAD`}
+            title={`${car.brand} ${car.model} ${mode === 'interior' ? '3D Interior' : '3D CAD'}`}
             allow="autoplay; fullscreen; xr-spatial-tracking"
             style={{
               position: 'absolute',
@@ -1530,8 +1306,8 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
         </div>
       )}
 
-      {/* MODE 2 & 3: THREE.JS INTERACTIVE COCKPIT INTERIOR OR X-RAY DRIVETRAIN */}
-      {mode !== 'cad' && (
+      {/* MODE 3: THREE.JS HOLOGRAPHIC X-RAY DRIVETRAIN */}
+      {mode === 'xray' && (
         <div
           ref={mountRef}
           style={{
@@ -1593,8 +1369,8 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
                   : '3D-RÖNTGEN · CHASSIS & ANTRIEB'
                 : mode === 'interior'
                   ? lang === 'sv'
-                    ? `3D-INTERIÖR · ${activeInteriorPkg.nameSv.toUpperCase()}`
-                    : `3D-INTERIEUR · ${activeInteriorPkg.nameDe.toUpperCase()}`
+                    ? `3D-INTERIÖR (${interiorCadModel.polygons.toLocaleString('de-AT')} POLY) · ${activeInteriorPkg.nameSv.toUpperCase()}`
+                    : `3D-INTERIEUR (${interiorCadModel.polygons.toLocaleString('de-AT')} POLY) · ${activeInteriorPkg.nameDe.toUpperCase()}`
                   : lang === 'sv'
                     ? `3D-SHOWROOM · ${cadModel.polygons.toLocaleString('de-AT')} POLYGONER`
                     : `3D-SHOWROOM · ${cadModel.polygons.toLocaleString('de-AT')} POLYGONE`}
@@ -1629,9 +1405,32 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
           )}
 
           {mode === 'interior' && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, pointerEvents: 'auto' }}>
+              {(Object.keys(INTERIOR_CAD_MODELS) as InteriorCadVariantId[]).map((vId) => {
+                const vDef = INTERIOR_CAD_MODELS[vId];
+                const isVarOn = interiorVariant === vId;
+                return (
+                  <button
+                    key={vId}
+                    type="button"
+                    onClick={() => setInteriorVariant(vId)}
+                    title={lang === 'sv' ? vDef.labelSv : vDef.labelDe}
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 700,
+                      padding: '3px 8px',
+                      borderRadius: 5,
+                      cursor: 'pointer',
+                      background: isVarOn ? '#B45309' : 'rgba(15, 23, 42, 0.85)',
+                      color: '#F8FAFC',
+                      border: isVarOn ? '1px solid #F59E0B' : '1px solid rgba(255,255,255,0.16)',
+                    }}
+                  >
+                    {lang === 'sv' ? vDef.shortSv : vDef.shortDe}
+                  </button>
+                );
+              })}
               {[
-                lang === 'sv' ? '15" OLED Infotainment' : '15" OLED-Infotainment',
                 `${lang === 'sv' ? 'Bagage' : 'Kofferraum'}: ${dims.trunkLiters} L`,
                 ...(selectedOptions.includes('hud_matrix') ? ['📽️ AR-HUD Aktiv'] : []),
                 ...(selectedOptions.includes('pano')
