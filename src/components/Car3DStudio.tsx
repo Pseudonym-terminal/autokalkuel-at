@@ -223,12 +223,38 @@ export function getCarDimensions(car: FahrwertCar): CarDimensions {
 
 type CameraPreset = 'front34' | 'side' | 'rear34' | 'top';
 type InteriorCamPreset = 'driver' | 'lounge' | 'top';
-type InteriorCadVariantId = 'executive' | 'comfort';
+type InteriorCadVariantId = 'vw_mib4' | 'vw_id' | 'executive' | 'comfort';
 
 const INTERIOR_CAD_MODELS: Record<
   InteriorCadVariantId,
-  { uid: string; polygons: number; labelDe: string; labelSv: string; shortDe: string; shortSv: string }
+  {
+    uid: string;
+    polygons: number;
+    labelDe: string;
+    labelSv: string;
+    shortDe: string;
+    shortSv: string;
+    isVwOemCabin?: boolean;
+  }
 > = {
+  vw_mib4: {
+    uid: '18333bf2a9564772917ae8a349b81e62',
+    polygons: 390614,
+    labelDe: 'Volkswagen MIB4 Digital-Cockpit 2025 (15" Display · VW-Lenkrad · 55 OEM-Materialien)',
+    labelSv: 'Volkswagen MIB4 Digital-Cockpit 2025 (15" skärm · VW-ratt · 55 OEM-material)',
+    shortDe: '🚗 VW MIB4 (2025)',
+    shortSv: '🚗 VW MIB4 (2025)',
+    isVwOemCabin: true,
+  },
+  vw_id: {
+    uid: '20d27c97c31043e8a3d1baa279597253',
+    polygons: 501681,
+    labelDe: 'Volkswagen ID. Pro Cockpit 2025 (ID. Display · Play/Pause-Pedale · 44 OEM-Materialien)',
+    labelSv: 'Volkswagen ID. Pro Cockpit 2025 (ID.-skärm · Play/Pause-pedaler · 44 OEM-material)',
+    shortDe: '⚡ VW ID. (2025)',
+    shortSv: '⚡ VW ID. (2025)',
+    isVwOemCabin: true,
+  },
   executive: {
     uid: 'c9df17ad5d3a4329a2d8efd7ace33baa',
     polygons: 2025270,
@@ -249,7 +275,14 @@ const INTERIOR_CAD_MODELS: Record<
 
 function getDefaultInteriorVariant(car: FahrwertCar): InteriorCadVariantId {
   const b = car.brand.toLowerCase();
-  if (b.includes('hyundai') || b.includes('kia') || b.includes('toyota') || b.includes('mg') || b.includes('mazda')) {
+  const cid = car.id.toLowerCase();
+  if (cid === 'id4' || cid === 'id3' || cid === 'id-buzz' || cid === 'born' || cid === 'explorer') {
+    return 'vw_id';
+  }
+  if (b.includes('vw') || b.includes('volkswagen') || b.includes('skoda') || b.includes('škoda') || b.includes('cupra')) {
+    return 'vw_mib4';
+  }
+  if (b.includes('hyundai') || b.includes('kia') || b.includes('toyota') || b.includes('mg') || b.includes('byd')) {
     return 'comfort';
   }
   return 'executive';
@@ -500,13 +533,20 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
       }
     }
 
-    const seatLeatherRegex = /seat_leather|^leather$|brown_plastic|brow_speaker_cover/i;
-    const seatGridQuiltRegex = /seat_grid|^03___default$/i;
-    const trimInlayRegex = /wiredrawing_aluminum|semi_silver_metal|semi_metal|gray_plastic/i;
-    // Both `stich_line_brown` (Executive 2.0M) and `line` (Sport-Carbon 1.9M) are physical contrast stitch threads on steering wheel, seats & gear boot
-    const stitchThreadRegex = /stich_line|^line$/i;
+    // Hide exterior body, roof, pillars, windows, wheels & deployed airbag meshes on OEM Volkswagen configurator models so only the open-top cabin renders
+    const hideExteriorInCabinRegex =
+      /:[a-z0-9]{8}\]|^airbags\b|windows ext|windows int|glass clear|roofliner|sun visor|pillars dark|wheelhouse shadow|^tires\b|brake rotor|reflector|glow drl|glow plate|glow red|glow hid|id3 glow|gris ascot|artic blue|dark olivine|amarillo kurkuma|blanco puro|^mirror\b/i;
+
+    const seatLeatherRegex =
+      /seat_leather|^leather$|brown_plastic|brow_speaker_cover|leather smooth (?!perforated)|leather rough|leather black bpe6c3|int black synthetic fabric/i;
+    const seatGridQuiltRegex =
+      /seat_grid|^03___default$|leather smooth perforated|microfleece|fabric tpd|suede dust/i;
+    const trimInlayRegex =
+      /wiredrawing_aluminum|semi_silver_metal|semi_metal|gray_plastic|wood trim|trim dash|brushed metal/i;
+    // Both `stich_line_brown` (Executive 2.0M), `line` (Sport-Carbon 1.9M) & `Stitching` (VW OEM 2025) are physical contrast stitch threads
+    const stitchThreadRegex = /stich_line|^line$|stitching/i;
     const ambientLedRegex =
-      /round_blue_self|red_self|round_red_self|red_double|orange_self|red_slef|green_self|material0/i;
+      /round_blue_self|red_self|round_red_self|red_double|orange_self|red_slef|green_self|material0|ambilight/i;
 
     // Preserves existing normal/bump/opacity/diffuse textures while updating PBR base color
     const updateBaseColor = (ch: any, r: number, g: number, b: number, factor = 0.82, stripAlbedoTex = false) => {
@@ -541,7 +581,20 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
       const ch = mat.channels;
       if (!ch) return;
 
-      if (seatLeatherRegex.test(mName)) {
+      if (hideExteriorInCabinRegex.test(mName)) {
+        const updated = JSON.parse(JSON.stringify(mat));
+        updated.channels.Opacity = {
+          ...(updated.channels.Opacity || {}),
+          enable: true,
+          factor: 0,
+          type: 'alphaBlend',
+        };
+        if (updated.channels.EmitColor) {
+          updated.channels.EmitColor.enable = false;
+          updated.channels.EmitColor.factor = 0;
+        }
+        api.setMaterial(updated);
+      } else if (seatLeatherRegex.test(mName)) {
         const updated = JSON.parse(JSON.stringify(mat));
         updateBaseColor(updated.channels, sr, sg, sb, cal.albedoFactor);
         // Never self-emit on leather so natural HDRI shadows and BumpMap grain stay crisp
@@ -662,9 +715,10 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
     const initViewer = () => {
       if (cancelled || !cadIframeRef.current) return;
       const SketchfabCtor = (window as any).Sketchfab;
-      const spinSpeed = mode === 'interior' ? 0.02 : 0.12;
+      const isVwOem = mode === 'interior' && Boolean(interiorCadModel.isVwOemCabin);
+      const spinSpeed = mode === 'interior' ? (isVwOem ? 0 : 0.02) : 0.12;
       if (!SketchfabCtor) {
-        cadIframeRef.current.src = `https://sketchfab.com/models/${activeSketchfabUid}/embed?autostart=1&preload=1&ui_theme=dark&dnt=1&autospin=${spinSpeed}&ui_infos=0&ui_watermark=0&ui_stop=0&ui_inspector=0&ui_settings=0&ui_vr=0&ui_help=0&ui_annotations=0`;
+        cadIframeRef.current.src = `https://sketchfab.com/models/${activeSketchfabUid}/embed?autostart=1&preload=1&ui_theme=dark&dnt=1&autospin=${spinSpeed}&camera=0&ui_infos=0&ui_watermark=0&ui_stop=0&ui_inspector=0&ui_settings=0&ui_vr=0&ui_help=0&ui_annotations=0`;
         return;
       }
 
@@ -673,6 +727,7 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
         autostart: 1,
         preload: 1,
         autospin: spinSpeed,
+        camera: 0,
         ui_theme: 'dark',
         ui_infos: 0,
         ui_watermark: 0,
@@ -692,6 +747,41 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
             if (cancelled) return;
             setCadLoaded(true);
 
+            // On OEM Volkswagen configurator models, pause animations at t=0 so doors stay closed around the cabin & airbags stay undeployed
+            if (isVwOem) {
+              if (typeof api.pause === 'function') {
+                api.pause();
+              }
+              if (typeof api.seekTo === 'function') {
+                api.seekTo(0);
+              }
+              if (typeof api.setCameraConstraints === 'function') {
+                api.setCameraConstraints(
+                  {
+                    useCameraConstraints: false,
+                    usePanConstraints: false,
+                    useZoomConstraints: false,
+                    usePitchConstraints: false,
+                    useYawConstraints: false,
+                  },
+                  () => {}
+                );
+              }
+              if (typeof api.getNodeMap === 'function' && typeof api.hide === 'function') {
+                const hideNodeRegex =
+                  /:[a-z0-9]{8}|^ext\b|ext_|exterior|airbags?(?!.*tag)|roofliner|sun\s*visor|sun\s*roof|wheelhouse|tailgate|wiper|tire|tyre|brake|rotor|caliper|headlight|taillight|bumper|fender|hood|bonnet|plate/i;
+                api.getNodeMap((nErr: any, nodes: Record<string, any>) => {
+                  if (!nErr && nodes) {
+                    Object.values(nodes).forEach((node: any) => {
+                      if (node && node.name && hideNodeRegex.test(String(node.name))) {
+                        api.hide(node.instanceID);
+                      }
+                    });
+                  }
+                });
+              }
+            }
+
             if (typeof api.setBackground === 'function') {
               api.setBackground({
                 color: pal.id === 'premium' ? [0.05, 0.065, 0.09] : [0.07, 0.095, 0.095],
@@ -703,9 +793,9 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
               api.setPostProcessing({
                 enable: true,
                 ssaoEnable: true,
-                ssaoRadius: 0.16,
+                ssaoRadius: isVwOem ? 0.08 : 0.16,
                 ssaoIntensity: 0.72,
-                ssaoBias: 0.03,
+                ssaoBias: 0.02,
                 sharpenEnable: true,
                 sharpenFactor: 0.24,
                 bloomEnable: true,
@@ -714,7 +804,7 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
                 bloomRadius: 0.55,
                 toneMappingEnable: true,
                 toneMappingMethod: 'filmic',
-                exposure: mode === 'interior' ? 0.92 : 1.0,
+                exposure: mode === 'interior' ? 0.94 : 1.0,
                 brightness: 0.0,
                 contrast: 0.09,
                 saturation: 1.06,
@@ -740,7 +830,16 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
               });
             }
 
-            if (typeof api.getCameraLookAt === 'function') {
+            if (isVwOem && typeof api.setCameraLookAt === 'function') {
+              // Position camera directly inside the Volkswagen cockpit looking at the VW steering wheel, Digital Cockpit & 15" MIB4 / ID. screen
+              const vwLoungePos: [number, number, number] = [-0.58, -0.02, 1.08];
+              const vwLoungeTarget: [number, number, number] = [-0.04, 0.56, 0.84];
+              sfInitialCamRef.current = {
+                position: vwLoungePos,
+                target: vwLoungeTarget,
+              };
+              api.setCameraLookAt(vwLoungePos, vwLoungeTarget, 0);
+            } else if (typeof api.getCameraLookAt === 'function') {
               api.getCameraLookAt((err: any, cam: any) => {
                 if (!err && cam && cam.position && cam.target) {
                   sfInitialCamRef.current = {
@@ -1316,6 +1415,17 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
     const api = sfApiRef.current;
     const initCam = sfInitialCamRef.current;
     if (api && initCam && typeof api.setCameraLookAt === 'function') {
+      if (interiorCadModel.isVwOemCabin) {
+        if (preset === 'driver') {
+          api.setCameraLookAt([-0.34, -0.14, 1.09], [-0.18, 0.65, 0.88], 0.75);
+        } else if (preset === 'lounge') {
+          api.setCameraLookAt([-0.58, -0.02, 1.08], [-0.04, 0.56, 0.84], 0.75);
+        } else if (preset === 'top') {
+          api.setCameraLookAt([-0.82, -0.52, 1.68], [0.0, 0.22, 0.72], 0.75);
+        }
+        return;
+      }
+
       const [tx, ty, tz] = initCam.target;
       const [px, py, pz] = initCam.position;
       const dx = px - tx;
