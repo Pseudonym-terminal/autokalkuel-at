@@ -93,7 +93,7 @@ export const App: React.FC = () => {
 
   const [country, setCountry] = useState<CountryCode>('AT');
   const [lang, setLang] = useState<Language>('de');
-  const [screen, setScreen] = useState<ScreenId>('start');
+  const [screen, setScreen] = useState<ScreenId>('list');
   const [sit, setSit] = useState<SituationId>('ordination');
   const [km, setKm] = useState<number>(15000);
   const [term, setTerm] = useState<number>(48);
@@ -101,10 +101,10 @@ export const App: React.FC = () => {
   const [bizSharePct, setBizSharePct] = useState<number>(80);
   const [commute, setCommute] = useState<number>(20);
 
-  // Filters & sorting on 'list' screen
-  const [fuels, setFuels] = useState<FuelType[]>(['bev', 'phev', 'hev', 'petrol', 'diesel']);
+  // Filters & sorting on 'list' screen (default to Volvo electric lineup)
+  const [fuels, setFuels] = useState<FuelType[]>(['bev']);
   const [bodies, setBodies] = useState<BodyCategory[]>(['suv', 'hatchback', 'estate', 'sedan']);
-  const [selectedBrand, setSelectedBrand] = useState<string>('ALL');
+  const [selectedBrand, setSelectedBrand] = useState<string>('Volvo');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [minRange, setMinRange] = useState<number>(0);
   const [maxPrice, setMaxPrice] = useState<number>(90000);
@@ -113,10 +113,10 @@ export const App: React.FC = () => {
   const [listLayout, setListLayout] = useState<ListLayoutMode>('cards');
 
   // Detail & Compare state
-  const [detailId, setDetailId] = useState<string>('id7');
+  const [detailId, setDetailId] = useState<string>('ec40');
   const [detailForm, setDetailForm] = useState<FahrwertFormKey | null>(null);
   const [detailMediaMode, setDetailMediaMode] = useState<'photo' | '3d' | 'interior' | 'xray'>('photo');
-  const [compareIds, setCompareIds] = useState<string[]>(['enyaq', 'id7', 'ioniq5']);
+  const [compareIds, setCompareIds] = useState<string[]>(['ex30', 'ex40', 'ec40', 'ex90']);
   const [overridesMap, setOverridesMap] = useState<Record<string, CarOverrides>>({});
   const [leadSentFor, setLeadSentFor] = useState<Record<string, boolean>>({});
   const [pdfNotice, setPdfNotice] = useState<string | null>(null);
@@ -1291,6 +1291,96 @@ export const App: React.FC = () => {
 
         {/* MAIN AREA */}
         <div>
+          {/* QUICK BRAND & VOLVO EV SHOWCASE PILL BAR */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              flexWrap: 'wrap',
+              marginBottom: 16,
+              padding: '10px 14px',
+              borderRadius: direction === 'fintech' ? 14 : 10,
+              background: PAL.card,
+              border: `1px solid ${PAL.line}`,
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedBrand('Volvo');
+                setFuels(['bev']);
+              }}
+              style={{
+                padding: '6px 12px',
+                borderRadius: PAL.radiusBadge,
+                border:
+                  selectedBrand === 'Volvo' && fuels.length === 1 && fuels[0] === 'bev'
+                    ? `1.5px solid ${PAL.accent}`
+                    : `1px solid ${PAL.line}`,
+                background:
+                  selectedBrand === 'Volvo' && fuels.length === 1 && fuels[0] === 'bev'
+                    ? PAL.accent
+                    : PAL.inputBg,
+                color:
+                  selectedBrand === 'Volvo' && fuels.length === 1 && fuels[0] === 'bev'
+                    ? PAL.accentFg
+                    : PAL.ink,
+                fontSize: 12,
+                fontWeight: 700,
+                cursor: 'pointer',
+              }}
+            >
+              🇸🇪 {lang === 'sv' ? 'Volvo Elbilar (7)' : 'Volvo Elektroautos (7)'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedBrand('ALL');
+                setFuels(['bev', 'phev', 'hev', 'petrol', 'diesel']);
+              }}
+              style={{
+                padding: '6px 12px',
+                borderRadius: PAL.radiusBadge,
+                border: selectedBrand === 'ALL' ? `1.5px solid ${PAL.selBg}` : `1px solid ${PAL.line}`,
+                background: selectedBrand === 'ALL' ? PAL.selBg : PAL.inputBg,
+                color: selectedBrand === 'ALL' ? PAL.selFg : PAL.ink,
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              {lang === 'sv' ? `Alla märken (${FAHRWERT_CARS.length})` : `Alle Marken (${FAHRWERT_CARS.length})`}
+            </button>
+
+            {['Polestar', 'VW', 'BMW', 'Audi', 'Škoda', 'Hyundai', 'Kia', 'Tesla', 'Mercedes-Benz'].map((bName) => {
+              const isBrandOn = selectedBrand === bName;
+              return (
+                <button
+                  key={bName}
+                  type="button"
+                  onClick={() => {
+                    setSelectedBrand(bName);
+                    setFuels(['bev', 'phev', 'hev', 'petrol', 'diesel']);
+                  }}
+                  style={{
+                    padding: '5px 10px',
+                    borderRadius: PAL.radiusBadge,
+                    border: isBrandOn ? `1.5px solid ${PAL.selBg}` : `1px solid ${PAL.line}`,
+                    background: isBrandOn ? PAL.selBg : 'transparent',
+                    color: isBrandOn ? PAL.selFg : PAL.muted,
+                    fontSize: 11.5,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {bName === 'Polestar' ? '🇸🇪 Polestar' : bName}
+                </button>
+              );
+            })}
+          </div>
+
           <div
             style={{
               display: 'flex',
@@ -1314,7 +1404,11 @@ export const App: React.FC = () => {
                   outline: 'none',
                 }}
               >
-                {filteredCars.length} {lang === 'sv' ? 'Modeller' : 'Modelle'}
+                {selectedBrand === 'Volvo' && fuels.length === 1 && fuels[0] === 'bev'
+                  ? lang === 'sv'
+                    ? `🇸🇪 Volvo Elbilar (${filteredCars.length} modeller)`
+                    : `🇸🇪 Volvo Elektroautos (${filteredCars.length} Modelle)`
+                  : `${filteredCars.length} ${lang === 'sv' ? 'Modeller' : 'Modelle'}`}
               </h1>
               <div style={{ fontSize: 13, color: PAL.muted }}>
                 {lang === 'sv' ? 'Nettokostnad/mån för ' : 'Nettokosten/Monat für '}

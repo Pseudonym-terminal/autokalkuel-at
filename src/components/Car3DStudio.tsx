@@ -44,13 +44,18 @@ export const CAD_MODELS_BY_CAR_ID: Record<string, CadModelMeta> = {
   r5: { uid: '6e8fb3f12cf34c1095cdd89cfd77580c', label: 'Renault 5 / Clio E-Tech CAD', polygons: 1377460 },
   elroq: { uid: 'be5305189e874b1d9104435712e76de9', label: 'Škoda Elroq 2025 CAD', polygons: 570364 },
   ev6: { uid: 'cf70e549c9cb4095b40edc7d4700ccfa', label: 'Kia EV6 84 kWh CAD', polygons: 779230 },
-  ex30: { uid: 'c5be588ea33d44cc8d2690ffdba389a4', label: 'Volvo EX30 Single Motor CAD', polygons: 159554 },
+  ex30: { uid: '2536746579ea4ea48076bea25d05768f', label: 'Volvo EX30 Single Motor ER CAD', polygons: 334224 },
+  'ex30-twin': { uid: 'c5be588ea33d44cc8d2690ffdba389a4', label: 'Volvo EX30 Twin Motor Performance CAD', polygons: 159554 },
   i5: { uid: '4ab34c43bada482b8e467be97ebaeba3', label: 'BMW i5 / G60 Limousine CAD', polygons: 389102 },
   id4: { uid: '898fcce37f0948499d1b4c1effc051d1', label: 'Volkswagen ID.4 Pro CAD', polygons: 256508 },
   m3: { uid: '632435162090408c85d39808896601c9', label: 'Tesla Model 3 CAD', polygons: 684934 },
   scenic: { uid: '4c1863a87a6e4b6f9995be3ec2898271', label: 'Renault Scenic / Mégane E-Tech CAD', polygons: 142476 },
   explorer: { uid: '04089b4affbf4518a6993b2b8e3256e9', label: 'Ford Explorer EV CAD', polygons: 1500000 },
   ex40: { uid: 'c6c616c37d024d7b8f35720b179e58ef', label: 'Volvo EX40 / XC40 Recharge CAD', polygons: 1451260 },
+  ec40: { uid: '91599337e17a4db08ecc00bae856c2c7', label: 'Volvo EC40 Twin Motor Coupé CAD', polygons: 2928250 },
+  ex60: { uid: 'd882db0be5f84b7b85b85a334054a55d', label: 'Volvo EX60 800V SPA3 CAD', polygons: 1729412 },
+  es90: { uid: '9462b07c10244fd4a28d86846dc9e3a9', label: 'Volvo ES90 800V Flagship CAD', polygons: 3274586 },
+  ex90: { uid: '22db827577944600b8dc336ba9db5646', label: 'Volvo EX90 Twin Motor 7-Sitzer CAD', polygons: 1553225 },
   ev9: { uid: '1e3c87edd3224342bc4eac5bf15a2d90', label: 'Kia EV9 AWD GT-Line CAD', polygons: 570138 },
   sealu: { uid: 'dda5d96fa79e42c290a279168126f247', label: 'BYD Seal U Comfort CAD', polygons: 178063 },
   'tiguan-phev': { uid: 'c8780d08e8dc4050a1287fa99c31824c', label: 'Volkswagen Tiguan eHybrid CAD', polygons: 812202 },
@@ -123,10 +128,19 @@ function hexToLinearRgb(hex: string): [number, number, number] {
 }
 
 export function getCarDimensions(car: FahrwertCar): CarDimensions {
-  const is800V = ['ioniq5', 'ioniq6', 'ev6', 'ev9', 'q6-etron', 'a6-etron', 'macan-ev', 'xpeng-g6'].includes(
-    car.id
-  );
-  const isAwd = ['ev9', 'xc60-phev', 'macan-ev', 'my'].includes(car.id);
+  const is800V = [
+    'ioniq5',
+    'ioniq6',
+    'ev6',
+    'ev9',
+    'q6-etron',
+    'a6-etron',
+    'macan-ev',
+    'xpeng-g6',
+    'ex60',
+    'es90',
+  ].includes(car.id);
+  const isAwd = ['ev9', 'xc60-phev', 'macan-ev', 'my', 'ex30-twin', 'ec40', 'ex90'].includes(car.id);
   const isFwd = [
     'r5',
     'inster',
@@ -159,6 +173,12 @@ export function getCarDimensions(car: FahrwertCar): CarDimensions {
     inster: { lengthMm: 3825, widthMm: 1610, heightMm: 1575, wheelbaseMm: 2580, trunkLiters: 280, batteryKwhNet: 49 },
     r5: { lengthMm: 3922, widthMm: 1774, heightMm: 1498, wheelbaseMm: 2540, trunkLiters: 326, batteryKwhNet: 52 },
     ex30: { lengthMm: 4233, widthMm: 1836, heightMm: 1550, wheelbaseMm: 2650, trunkLiters: 318, batteryKwhNet: 64 },
+    'ex30-twin': { lengthMm: 4233, widthMm: 1836, heightMm: 1550, wheelbaseMm: 2650, trunkLiters: 318, batteryKwhNet: 64 },
+    ex40: { lengthMm: 4440, widthMm: 1873, heightMm: 1647, wheelbaseMm: 2702, trunkLiters: 452, batteryKwhNet: 79 },
+    ec40: { lengthMm: 4440, widthMm: 1873, heightMm: 1591, wheelbaseMm: 2702, trunkLiters: 404, batteryKwhNet: 79 },
+    ex60: { lengthMm: 4710, widthMm: 1915, heightMm: 1635, wheelbaseMm: 2895, trunkLiters: 540, batteryKwhNet: 91 },
+    es90: { lengthMm: 4990, widthMm: 1945, heightMm: 1547, wheelbaseMm: 3102, trunkLiters: 495, batteryKwhNet: 102 },
+    ex90: { lengthMm: 5037, widthMm: 1964, heightMm: 1744, wheelbaseMm: 2985, trunkLiters: 655, batteryKwhNet: 107 },
     'id-buzz': { lengthMm: 4712, widthMm: 1985, heightMm: 1927, wheelbaseMm: 2989, trunkLiters: 1121, batteryKwhNet: 79 },
     'macan-ev': { lengthMm: 4784, widthMm: 1938, heightMm: 1622, wheelbaseMm: 2893, trunkLiters: 540, batteryKwhNet: 95 },
     mg4: { lengthMm: 4287, widthMm: 1836, heightMm: 1504, wheelbaseMm: 2705, trunkLiters: 363, batteryKwhNet: 61.7 },
@@ -223,7 +243,7 @@ export function getCarDimensions(car: FahrwertCar): CarDimensions {
 
 type CameraPreset = 'front34' | 'side' | 'rear34' | 'top';
 type InteriorCamPreset = 'driver' | 'lounge' | 'top';
-type InteriorCadVariantId = 'vw_mib4' | 'vw_id' | 'executive' | 'comfort';
+type InteriorCadVariantId = 'volvo_nordic' | 'vw_mib4' | 'vw_id' | 'executive' | 'comfort';
 
 const INTERIOR_CAD_MODELS: Record<
   InteriorCadVariantId,
@@ -235,8 +255,18 @@ const INTERIOR_CAD_MODELS: Record<
     shortDe: string;
     shortSv: string;
     isVwOemCabin?: boolean;
+    isVolvoOemCabin?: boolean;
   }
 > = {
+  volvo_nordic: {
+    uid: '91599337e17a4db08ecc00bae856c2c7',
+    polygons: 2928250,
+    labelDe: 'Volvo Nordic Google-Cockpit (2.928.250 Polygone · Volvo-Lenkrad · Abisko-Topografie · 41 PBR-Materialien)',
+    labelSv: 'Volvo Nordic Google-Cockpit (2 928 250 polygoner · Volvo-ratt · Abisko-topografi · 41 PBR-material)',
+    shortDe: '🇸🇪 Volvo Nordic (2,9M)',
+    shortSv: '🇸🇪 Volvo Nordic (2,9M)',
+    isVolvoOemCabin: true,
+  },
   vw_mib4: {
     uid: '18333bf2a9564772917ae8a349b81e62',
     polygons: 390614,
@@ -276,6 +306,9 @@ const INTERIOR_CAD_MODELS: Record<
 function getDefaultInteriorVariant(car: FahrwertCar): InteriorCadVariantId {
   const b = car.brand.toLowerCase();
   const cid = car.id.toLowerCase();
+  if (b.includes('volvo') || b.includes('polestar')) {
+    return 'volvo_nordic';
+  }
   if (cid === 'id4' || cid === 'id3' || cid === 'id-buzz' || cid === 'born' || cid === 'explorer') {
     return 'vw_id';
   }
@@ -533,20 +566,20 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
       }
     }
 
-    // Hide exterior body, roof, pillars, windows, wheels & deployed airbag meshes on OEM Volkswagen configurator models so only the open-top cabin renders
+    // Hide exterior body, roof, pillars, windows, wheels & deployed airbag meshes on OEM Volkswagen & Volvo configurator models so only the open-top cabin renders
     const hideExteriorInCabinRegex =
-      /:[a-z0-9]{8}\]|^airbags\b|windows ext|windows int|glass clear|roofliner|sun visor|pillars dark|wheelhouse shadow|^tires\b|brake rotor|reflector|glow drl|glow plate|glow red|glow hid|id3 glow|gris ascot|artic blue|dark olivine|amarillo kurkuma|blanco puro|^mirror\b/i;
+      /:[a-z0-9]{8}\]|^airbags\b|windows ext|windows int|glass clear|roofliner|sun visor|pillars dark|wheelhouse shadow|^tires\b|brake rotor|reflector|glow drl|glow plate|glow red|glow hid|id3 glow|gris ascot|artic blue|dark olivine|amarillo kurkuma|blanco puro|^mirror\b|^car paint\b|^blacktrim$|^glass$|^glass_sunroof$|^glassdark$|^glass_red_taillight$|^glass_pattern_bump$|^glass_wave$|^lens\(headlight\)$|^emission$|^emission_rear$|^licenseplate_sweden|^metal_rim$|^side_wall|^tread$|^disc$|^rubber$|^interior_shell$/i;
 
     const seatLeatherRegex =
-      /seat_leather|^leather$|brown_plastic|brow_speaker_cover|leather smooth (?!perforated)|leather rough|leather black bpe6c3|int black synthetic fabric/i;
+      /seat_leather|^leather$|brown_plastic|brow_speaker_cover|leather smooth (?!perforated)|leather rough|leather black bpe6c3|int black synthetic fabric|^seats_front$|^seats_rear$/i;
     const seatGridQuiltRegex =
-      /seat_grid|^03___default$|leather smooth perforated|microfleece|fabric tpd|suede dust/i;
+      /seat_grid|^03___default$|leather smooth perforated|microfleece|fabric tpd|suede dust|^front_door_cards$|^rear_door_cards$|^plastic-blue$/i;
     const trimInlayRegex =
-      /wiredrawing_aluminum|semi_silver_metal|semi_metal|gray_plastic|wood trim|trim dash|brushed metal/i;
+      /wiredrawing_aluminum|semi_silver_metal|semi_metal|gray_plastic|wood trim|trim dash|brushed metal|^dash_trim$/i;
     // Both `stich_line_brown` (Executive 2.0M), `line` (Sport-Carbon 1.9M) & `Stitching` (VW OEM 2025) are physical contrast stitch threads
     const stitchThreadRegex = /stich_line|^line$|stitching/i;
     const ambientLedRegex =
-      /round_blue_self|red_self|round_red_self|red_double|orange_self|red_slef|green_self|material0|ambilight/i;
+      /round_blue_self|red_self|round_red_self|red_double|orange_self|red_slef|green_self|material0|ambilight|ambient_interior_lighting|translucent_withwave/i;
 
     // Preserves existing normal/bump/opacity/diffuse textures while updating PBR base color
     const updateBaseColor = (ch: any, r: number, g: number, b: number, factor = 0.82, stripAlbedoTex = false) => {
@@ -716,7 +749,9 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
       if (cancelled || !cadIframeRef.current) return;
       const SketchfabCtor = (window as any).Sketchfab;
       const isVwOem = mode === 'interior' && Boolean(interiorCadModel.isVwOemCabin);
-      const spinSpeed = mode === 'interior' ? (isVwOem ? 0 : 0.02) : 0.12;
+      const isVolvoOem = mode === 'interior' && Boolean(interiorCadModel.isVolvoOemCabin);
+      const isOemCabin = isVwOem || isVolvoOem;
+      const spinSpeed = mode === 'interior' ? (isOemCabin ? 0 : 0.02) : 0.12;
       if (!SketchfabCtor) {
         cadIframeRef.current.src = `https://sketchfab.com/models/${activeSketchfabUid}/embed?autostart=1&preload=1&ui_theme=dark&dnt=1&autospin=${spinSpeed}&camera=0&ui_infos=0&ui_watermark=0&ui_stop=0&ui_inspector=0&ui_settings=0&ui_vr=0&ui_help=0&ui_annotations=0`;
         return;
@@ -747,8 +782,8 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
             if (cancelled) return;
             setCadLoaded(true);
 
-            // On OEM Volkswagen configurator models, pause animations at t=0 so doors stay closed around the cabin & airbags stay undeployed
-            if (isVwOem) {
+            // On OEM Volkswagen & Volvo configurator models, pause animations at t=0 so doors stay closed around the cabin & airbags stay undeployed
+            if (isOemCabin) {
               if (typeof api.pause === 'function') {
                 api.pause();
               }
@@ -769,7 +804,7 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
               }
               if (typeof api.getNodeMap === 'function' && typeof api.hide === 'function') {
                 const hideNodeRegex =
-                  /:[a-z0-9]{8}|^ext\b|ext_|exterior|airbags?(?!.*tag)|roofliner|sun\s*visor|sun\s*roof|wheelhouse|tailgate|wiper|tire|tyre|brake|rotor|caliper|headlight|taillight|bumper|fender|hood|bonnet|plate/i;
+                  /:[a-z0-9]{8}|^ext\b|ext_|exterior|airbags?(?!.*tag)|roofliner|sun\s*visor|sun\s*roof|wheelhouse|tailgate|wiper|tire|tyre|brake|rotor|caliper|headlight|taillight|bumper|fender|hood|bonnet|plate|interior_shell|car\s*paint|blacktrim/i;
                 api.getNodeMap((nErr: any, nodes: Record<string, any>) => {
                   if (!nErr && nodes) {
                     Object.values(nodes).forEach((node: any) => {
@@ -793,7 +828,7 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
               api.setPostProcessing({
                 enable: true,
                 ssaoEnable: true,
-                ssaoRadius: isVwOem ? 0.08 : 0.16,
+                ssaoRadius: isOemCabin ? 0.08 : 0.16,
                 ssaoIntensity: 0.72,
                 ssaoBias: 0.02,
                 sharpenEnable: true,
@@ -830,7 +865,16 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
               });
             }
 
-            if (isVwOem && typeof api.setCameraLookAt === 'function') {
+            if (isVolvoOem && typeof api.setCameraLookAt === 'function') {
+              // Position camera directly inside the Volvo Nordic cockpit looking at the Volvo steering wheel, 12.3" driver cluster & Google Built-in vertical display
+              const volvoLoungePos: [number, number, number] = [0.58, -0.02, 1.08];
+              const volvoLoungeTarget: [number, number, number] = [0.04, -0.62, 0.84];
+              sfInitialCamRef.current = {
+                position: volvoLoungePos,
+                target: volvoLoungeTarget,
+              };
+              api.setCameraLookAt(volvoLoungePos, volvoLoungeTarget, 0);
+            } else if (isVwOem && typeof api.setCameraLookAt === 'function') {
               // Position camera directly inside the Volkswagen cockpit looking at the VW steering wheel, Digital Cockpit & 15" MIB4 / ID. screen
               const vwLoungePos: [number, number, number] = [-0.58, -0.02, 1.08];
               const vwLoungeTarget: [number, number, number] = [-0.04, 0.56, 0.84];
@@ -1415,6 +1459,16 @@ export const Car3DStudio: React.FC<Car3DStudioProps> = ({
     const api = sfApiRef.current;
     const initCam = sfInitialCamRef.current;
     if (api && initCam && typeof api.setCameraLookAt === 'function') {
+      if (interiorCadModel.isVolvoOemCabin) {
+        if (preset === 'driver') {
+          api.setCameraLookAt([0.34, 0.08, 1.09], [0.18, -0.68, 0.88], 0.75);
+        } else if (preset === 'lounge') {
+          api.setCameraLookAt([0.58, -0.02, 1.08], [0.04, -0.62, 0.84], 0.75);
+        } else if (preset === 'top') {
+          api.setCameraLookAt([0.82, 0.48, 1.68], [0.0, -0.25, 0.72], 0.75);
+        }
+        return;
+      }
       if (interiorCadModel.isVwOemCabin) {
         if (preset === 'driver') {
           api.setCameraLookAt([-0.34, -0.14, 1.09], [-0.18, 0.65, 0.88], 0.75);
